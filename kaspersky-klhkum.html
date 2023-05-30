@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Clean Blog - Start Bootstrap Theme</title>
+        <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+        <!-- Font Awesome icons (free version)-->
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <!-- Google fonts-->
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        <!-- Core theme CSS (includes Bootstrap)-->
+        <link href="css/styles.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-coy.min.css">
+
+
+    </head>
+    <body style="font-size: 17px;">
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="index.html">Yazid's notes</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="index.html">Home</a></li>
+                        <!--<li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="about.html">About</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="post.html">Sample Post</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="contact.html">Contact</a></li>-->
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- Page Header-->
+        <header class="masthead" style="background-image: url('assets/img/bluekitten.png')">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Kaspersky's klhkum.dll</h1>
+                            <h2 class="subheading">Let's play with Kaspersky's mysterious hookable DLL: klhkum.dll, and find out a little more about it.</h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">Yazid</a>
+                                on May 29, 2023
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Post Content-->
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <h2 class="section-heading">Let's rock</h2>
+                        <p>
+                            While randomly looking at the Windows Events logs, i noticed that some 
+                            processes had triggered some events related to a strange DLL that belongs 
+                            to Kaspersky : <b>klhkum.dll</b>. 
+                        </p>
+                        <code style="font-size: 14px;">
+                            Category: 0 <br>
+                            Time Generated : 2023-03-30 10:38:55<br>
+                            Source name : MsiInstaller<br>
+                            Event ID : 1025<br>
+                            Event Type : 0<br>
+                            Event Data:<br>
+                            Kaspersky Anti-Virus<br>
+                            C:\Program Files (x86)\Common Files\Kaspersky Lab\klhk\klhk_x64\klhkum.dll<br>
+                            Discord                        
+                        </code>
+                       
+                        <p>
+                        I knew that some antivirus programs practice user-mode hooking, but I had never delved into it further. User-mode hooking is advantageous for real-time antivirus compared to kernel-based monitors (kernel-mode hooking) because user-mode hooks allow data collection without the overhead of kernel access, with API granularity, and only affecting the monitored process. They are also lighter than kernel-level hooking, which is more commonly associated with EDR solutions.
+                        <br><br>
+                        In order to avoid impacting performance and complexity, some antivirus programs choose to hook only a specific set of crucial functions, as Avast does through aswhook.dll for functions such as <i>CreateRemoteThread</i> or <i>LoadDLL</i>.
+                        <br><br>
+                        The main drawback of this choice is that the hooking API can be unloaded by the monitored process and/or the hook can be detected and bypassed, which is something we will try to do later.
+                        </p>
+
+                        First, with Process Hacker, I looked at which processes the DLL was hooked up to: <br><br>
+
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img src="https://i.ibb.co/gw2NPXD/image.png">
+                        </div>
+
+                        <p>
+                            Kaspersky seems to be attaching the DLL to the processes it wants to monitor in real-time. Here, Discord.exe, ksdeui.exe (the process responsible for Kaspersky's internet security), and winsdksetup.exe (It does not appear at the time i took the screenshot in but I was downloading the latest version of the Windows SDK) are being hooked. It's a completely legitimate attachment from an antivirus, which would monitor for any malicious or corrupted files being downloaded through winsdksetup.exe ? Or ensure that my friends on Discord are not sending me WannaCry disguised as GTA VI ?
+<br><br>
+Then, I wanted to monitor the API calls of this famous DLL through API Monitor 32-bit, but surprise, it didn't even appear in the modules loaded by the process. Even worse: some sub-processes of Discord refuse to load.
+                        </p>
+
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="1000px" src="https://i.ibb.co/s6zjkJ8/image.png">
+                        </div>
+
+                        <p>
+                            Well, klhkum.dll may recognize when the process to which it is attached is in debug mode ? Let's try a more archaic approach using Windbg, we’ll do that on a Discord process, the one with PID 3452 that refused to load.
+<br><br>
+The process successfully loads but no klhkum.dll among the modules
+                        </p>
+
+                        
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img src="https://i.ibb.co/K2MfCLV/image.png">
+                        </div>
+
+                        <p> No matches.. Let's try an "lm" : </p>
+
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img src="https://i.ibb.co/vqSfXFR/image.png">
+                        </div>
+
+                        <p>Still no Kaspersky-signed module among the loaded ones. Mhh.. where it is hiding? </p>
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img src="https://thumbs.gfycat.com/ReliableMisguidedArmedcrab-max-1mb.gif">
+                        </div>
+
+                        <p>Maybe !dlls ?</p>
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img src="https://i.ibb.co/LCYTjW5/image.png">
+                        </div>
+
+                        <p>
+                            Kaspersky has definitely made its DLL hidden and safe from any attempt at debugging, but we're not stopping there ! Let’s parse its image, we have previously seen that the handle of Discord.exe on klhkum.dll is at the address 0xd670000, no need for RVA shift.
+                        </p>
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img src="https://i.ibb.co/r4pCYg9/image.png">
+                        </div>
+
+
+                        <p><b>PE Header Found !</b> Let's dig in its content:</p>
+                        <pre>
+                        <code style="font-size: 14px;">
+0:012> dt ntdll!_IMAGE_DOS_HEADER 0xd670000
+   +0x000 e_magic          : 0x5a4d
+   +0x002 e_cblp           : 0x90
+   +0x004 e_cp             : 3
+   +0x006 e_crlc           : 0
+   +0x008 e_cparhdr        : 4
+   +0x00a e_minalloc       : 0
+   +0x00c e_maxalloc       : 0xffff
+   +0x00e e_ss             : 0
+   +0x010 e_sp             : 0xb8
+   +0x012 e_csum           : 0
+   +0x014 e_ip             : 0
+   +0x016 e_cs             : 0
+   +0x018 e_lfarlc         : 0x40
+   +0x01a e_ovno           : 0
+   +0x01c e_res            : [4] 0
+   +0x024 e_oemid          : 0
+   +0x026 e_oeminfo        : 0
+   +0x028 e_res2           : [10] 0
+   +0x03c e_lfanew         : 0n248
+                        </code>
+                    </pre>
+                    <pre>
+                        <code style="font-size: 14px;">
+0:012> dt ntdll!_IMAGE_OPTIONAL_HEADER 0d670110
+   +0x000 Magic            : 0x20b
+   +0x002 MajorLinkerVersion : 0xe ''
+   +0x003 MinorLinkerVersion : 0x1d ''
+   +0x004 SizeOfCode       : 0x7a00
+   +0x008 SizeOfInitializedData : 0x1c000
+   +0x00c SizeOfUninitializedData : 0
+   +0x010 AddressOfEntryPoint : 0x4cf0
+   +0x014 BaseOfCode       : 0x1000
+   +0x018 BaseOfData       : 0xd670000
+   +0x01c ImageBase        : 0
+   +0x020 SectionAlignment : 0x1000
+   +0x024 FileAlignment    : 0x200
+   +0x028 MajorOperatingSystemVersion : 6
+   +0x02a MinorOperatingSystemVersion : 0
+   +0x02c MajorImageVersion : 0
+   +0x02e MinorImageVersion : 0
+   +0x030 MajorSubsystemVersion : 6
+   +0x032 MinorSubsystemVersion : 0
+   +0x034 Win32VersionValue : 0
+   +0x038 SizeOfImage      : 0x28000
+   +0x03c SizeOfHeaders    : 0x400
+   +0x040 CheckSum         : 0x3489a
+   +0x044 Subsystem        : 2
+   +0x046 DllCharacteristics : 0x4160
+   +0x048 SizeOfStackReserve : 0x100000
+   +0x04c SizeOfStackCommit : 0
+   +0x050 SizeOfHeapReserve : 0x1000
+   +0x054 SizeOfHeapCommit : 0
+   +0x058 LoaderFlags      : 0x100000
+   +0x05c NumberOfRvaAndSizes : 0
+   +0x060 DataDirectory    : [16] _IMAGE_DATA_DIRECTORY
+                        </code>
+                    </pre>
+
+                    <p>We found our klhkum.dll loaded in process memory and stripped its headers. Kaspersky may be hiding, but WinDBG has eyes everywhere. Note that we could have retrieved the same information + extras using CFF Explorer or PE bear, but it is always usefull to get used to WinDbg, especially when doing dynamic analysis.
+                    <br><br>
+                        Let’s now get more details about klhkum.dll & see its imports & exports :</p>
+
+
+                    <pre>
+                        <code style="font-size: 14px;">
+0:012> !dh 0xd670000
+
+File Type: DLL
+FILE HEADER VALUES
+    8664 machine (X64)
+       7 number of sections
+6449610B time date stamp Wed Apr 26 19:36:11 2023
+
+       0 file pointer to symbol table
+       0 number of symbols
+      F0 size of optional header
+    2022 characteristics
+            Executable
+            App can handle >2gb addresses
+            DLL
+
+OPTIONAL HEADER VALUES
+     20B magic #
+   14.29 linker version
+    7A00 size of code
+   1C000 size of initialized data
+       0 size of uninitialized data
+    4CF0 address of entry point
+    1000 base of code
+         ----- new -----
+0d670000 image base
+    1000 section alignment
+     200 file alignment
+       2 subsystem (Windows GUI)
+    6.00 operating system version
+    0.00 image version
+    6.00 subsystem version
+   28000 size of image
+     400 size of headers
+   3489A checksum
+00100000 size of stack reserve
+00001000 size of stack commit
+00100000 size of heap reserve
+00001000 size of heap commit
+    4160  DLL characteristics
+            High entropy VA supported
+            Dynamic base
+            NX compatible
+            Guard
+    D260 [      E0] address [size] of Export Directory
+    D340 [      28] address [size] of Import Directory
+[...]
+
+
+SECTION HEADER #1
+   .text name
+    7936 virtual size
+[...]
+
+SECTION HEADER #2
+  .rdata name
+    4952 virtual size
+[...]
+
+
+Debug Directories(4)
+	Type       Size     Address  Pointer
+	cv           48        c534     b334	Format: RSDS, guid, 1, C:\a\b\d_00000000_\b\out_x64\Release\klhkum.pdb
+	(   12)      14        c57c     b37c
+	(   13)     1ac        c590     b390
+	dllchar       4        c73c     b53c
+
+00000001 extended DLL characteristics
+          CET compatible
+
+
+SECTION HEADER #3
+   .data name
+   1599C virtual size
+[...]
+
+SECTION HEADER #4
+  .pdata name
+     7A4 virtual size
+[...]
+
+SECTION HEADER #5
+ .rodata name
+     600 virtual size
+[...]
+
+SECTION HEADER #6
+   .rsrc name
+     448 virtual size
+[...]
+
+SECTION HEADER #7
+  .reloc name
+     624 virtual size
+[...]
+                        </code>
+                    </pre>
+
+
+                    <p> The DLL has 7 sections : </p>
+                    <pre>
+                        <code>
+.text 
+.rdata
+.data
+.pdata 
+.rodata
+.rsrc
+.reloc
+                        </code>
+                    </pre>
+                    
+
+                    <p>
+                        We can even clearly see klhkum.dll debug directories : 
+                    </p>
+
+                    <pre>
+                        <code style="font-size: 14px;">
+Debug Directories(4)
+	Type       Size     Address  Pointer
+	cv           48        c534     b334	Format: RSDS, guid, 1, C:\a\b\d_00000000_\b\out_x64\Release\klhkum.pdb
+	(   12)      14        c57c     b37c
+	(   13)     1ac        c590     b390
+	dllchar       4        c73c     b53c
+
+00000001 extended DLL characteristics
+          CET compatible
+                        </code>
+                    </pre>
+
+                    <p>Let’s now see its imports & exports :</p>
+
+                    <pre>
+                        <code style="font-size: 14px;">
+0:012> !dh -imp 0xd670000
+  _IMAGE_IMPORT_DESCRIPTOR 0d67d340
+    ntdll.dll
+      000000000D679000 Import Address Table
+      000000000D67D368 Import Name Table
+                     0 time date stamp
+                     0 Index of first forwarder reference
+
+       00007FF85834F180  28A NtUnmapViewOfSection
+       00007FF858351F30  23E NtSetContextThread
+       00007FF85834ED20  150 NtDeviceIoControlFile
+       00007FF8582EC600  2DB RtlAllocateHeap
+       00007FF8582EAAB0  402 RtlFreeHeap
+       00007FF85834EF40   D9 NtAllocateVirtualMemory
+       00007FF85830C200  486 RtlInitializeCriticalSection
+       00007FF8582D1680  3B9 RtlEnterCriticalSection
+       00007FF8582D6AA0  4DF RtlLeaveCriticalSection
+       00007FF8583557C0  951 memcpy
+       00007FF85834EF60  1E3 NtQueryInformationProcess
+       00007FF8582DA150   8A LdrLoadDll
+       00007FF85834F0A0  205 NtQueryVirtualMemory
+       00007FF8582DD710   6D LdrDisableThreadCalloutsForDll
+       00007FF85834F6E0  11A NtCreateFile
+       00007FF8582C8340  47D RtlInitUnicodeString
+       00007FF85833EF10  8DE __C_specific_handler
+       00007FF8582DE760  469 RtlImageNtHeader
+       00007FF8582C45F0  31D RtlCompareUnicodeString
+       00007FF858300AB0   8C LdrLockLoaderLock
+       00007FF8583009B0   AF LdrUnlockLoaderLock
+       00007FF858340000  907 _strnicmp
+       00007FF8583E0010  955 memset
+       00007FF8582D43D0  46A RtlImageNtHeaderEx
+       00007FF858333800  48C RtlInitializeGenericTableAvl
+       00007FF85831A6A0  37D RtlDeleteElementGenericTableAvl
+       00007FF85835E800  4C4 RtlIsGenericTableEmptyAvl
+       00007FF858312F50  3C1 RtlEnumerateGenericTableWithoutSplayingAvl
+       00007FF85831A6E0  496 RtlInsertElementGenericTableAvl
+       00007FF858342A30  950 memcmp
+       00007FF85834F300  1FF NtQuerySystemInformation
+       00007FF85834F1C0  27B NtTerminateProcess
+       00007FF858352F60  2FB RtlCaptureContext
+       00007FF8582D02D0  4F9 RtlLookupFunctionEntry
+       00007FF8582D0790  63C RtlVirtualUnwind
+       00007FF85834E340  606 RtlUnhandledExceptionFilter
+       00007FF85834ECC0  294 NtWaitForSingleObject
+       00007FF85839ADC0  2C9 RtlAddFunctionTable
+       00007FF85838EFC0  440 RtlGetNtVersionNumbers
+       00007FF85830C410  490 RtlInitializeResource
+       00007FF85830FE40  576 RtlReleaseResource
+       00007FF85830A680  384 RtlDeleteResource
+       00007FF85830FD00  2B3 RtlAcquireResourceExclusive
+       00007FF85830FBE0  2B4 RtlAcquireResourceShared
+       00007FF8582F7A50  34C RtlCreateHeap
+       00007FF8582F8FD0  393 RtlDestroyHeap
+       00007FF85834EE20  101 NtClose
+       00007FF858303130  50E RtlNtStatusToDosError                         
+                        </code>
+                    </pre>
+
+                    <p>We can assume that some of these imported functions are monitored by klhkum.dll. These are very low-level functions emanating from equally low-level APIs.</p>
+                    
+                    <pre>
+                        <code style="font-size: 14px;">
+0:012> !dh -exp 0xd670000
+_IMAGE_EXPORT_DIRECTORY 0d67d260 (size: 000000e0)
+Name: klhkum.dll
+Characteristics: 00000000 Ordinal base: 1.
+Number of Functions: 6. Number of names: 6. EAT: 0d67d288.
+   ordinal hint target           name
+         1    0 000000000D6729A0 KlhkumBootstrapper
+         2    1 000000000D6728CB KlhkumBootstrapper2
+         3    2 000000000D674D70 KlhkumFastEntry
+         4    3 000000000D672935 KlhkumFastEntry2
+         5    4 000000000D674D80 KlhkumMain
+         6    5 000000000D672970 KlhkumUnmapBootstrapModule
+                        </code>
+                    </pre>
+
+                    <p>
+                        The DLL exports 6 functions, KlhkumMain appears to be the entry point from <i>DLL_PROCESS_ATTACH</i>.
+<br><br>
+Let's try a little simple reverse to see what's going on. I'll make a copy of klhkum.dll in my home directory, otherwise, the DLL refuses to be loaded on IDA 😾.
+<br><br>
+The call chain graph below reveals some very interesting details related to some of the previous obstacles we faced…
+                    </p>
+
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <img src="https://i.ibb.co/x6LCgs0/image.png">
+                    </div>
+
+                    <p>The DLL does indeed do something before its entry point: <b>It checks that the process it is attached to is not in Debug mode !</b> That's why we couldn't see our beloved klhkum.dll among the loaded modules: The DLL is loaded in memory, but it's playing dead.
+<br><br>
+                        Let me explain : The <i>NtQueryInformationProcess</i    > routine can be used to find out, among other things, whether a process is in debug mode or not, it has 5 parameters :</p>
+
+                    <pre>
+                        <code>
+__kernel_entry NTSTATUS NtQueryInformationProcess(
+  [in]            HANDLE           ProcessHandle,
+  [in]            PROCESSINFOCLASS ProcessInformationClass,
+  [out]           PVOID            ProcessInformation,
+  [in]            ULONG            ProcessInformationLength,
+  [out, optional] PULONG           ReturnLength
+);
+                        </code>
+                    </pre>
+
+                    <p>In case of a zero value of the ebx register (due to previous security checks stuff), the DLL jumps to the following, where it prepare the parameters in order to pass them to the routine once called.</p>
+
+                    <pre>
+                        <code>
+xor     eax, eax
+lea     r9d, [rbx+7]    ; ProcessInformationLength
+mov     [rsp+38h+ProcessInformation], rax
+lea     r8, [rsp+38h+ProcessInformation] ; ProcessInformation
+mov     [rsp+38h+arg_8], eax
+lea     edx, [rbx+19h]  ; ProcessInformationClass
+lea     rax, [rsp+38h+arg_8]
+mov     rcx, 0FFFFFFFFFFFFFFFFh ; ProcessHandle
+mov     [rsp+38h+ReturnLength], rax ; ReturnLength
+call    NtQueryInformationProcess
+test    eax, eax
+js      short loc_180004D42
+                        </code>
+                    </pre>
+                    
+                    <p>
+                        We are particularly interested in :
+<br>
+            <ul>
+                <li><code>lea [rsp+38h+ProcessInformation], rax </code>: this instruction intializes the at the memory location [rsp+38h+ProcessInformation] to 0.</li>
+            </ul>
+<br>
+The call is done then we jump to the next branch where a comparaison is done :
+                    </p>
+
+            <pre>
+                <code>
+cmp     [rsp+38h+ProcessInformation], 0
+jnz     short loc_180004D4C
+                </code>
+            </pre>
+
+<p>
+    This comparaison compares the value of [rsp+38h+ProcessInformation] alias <i>ProcessInformation</i> that has been refilled after the <i>NtQueryInformationProcess</i>’s call.
+<br><br>
+According to <a href="https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntqueryinformationprocess">Microsoft’s API documentation on <i>NtQueryInformationProcess</a></i> :
+</p>
+
+<blockquote class="blockquote">Retrieves a DWORD_PTR value that is the port number of the debugger for the process. A nonzero value indicates that the process is being run under the control of a ring 3 debugger.
+    <br>Use the CheckRemoteDebuggerPresent or IsDebuggerPresent function.</blockquote>
+
+                    <p>In case the value of ProcessInformation is different of zero, an unconditional jump is performed to the following branch : </p>
+                    <pre>
+                        <code>
+loc_180004D4C:
+mov     rcx, rdi
+call    LdrDisableThreadCalloutsForDll
+                        </code>
+                    </pre>
+                    <p>
+Oh look who’s there : <b><i>LdrDisableThreadCalloutsForDll</i></b> ! <br><br>
+
+Let's contextualize : Each dynamically loaded library (DLL) in a process has its own associated Thread Local Storage (TLS). Thread Local Storage is a mechanism in Windows that allows each thread in a process to have its own unique storage space. It is typically used to store thread-specific data that is accessible only by that thread. When a DLL is loaded into a process, it can define its own TLS data, which will be separate from the TLS data of other DLLs or the main executable. This means that each DLL can have its own set of thread-specific variables that are independent of other DLLs or the main executable.<br><br>
+
+According to <a href="https://anti-reversing.com/Downloads/Anti-Reversing/The_Ultimate_Anti-Reversing_Reference.pdf">“The Ultimate Anti-Debbuging Reference”</a> written by Peter Ferrie : <br>
+
+<blockquote class="blockquote" style="font-size: 17px;">Thread Local Storage callbacks are called whenever a thread is created or destroyed (unless the process calls the kernel32 DisableThreadLibraryCalls() or the ntdll LdrDisableThreadCalloutsForDll() functions). <br><br>That includes the thread that is created by Windows when a debugger attaches to a process. The debugger thread is special, in that its entrypoint does not point inside the image. Instead, it points inside kernel32.dll. <br><br>Thus, a simple debugger detection method is to use a Thread Local Storage callback to query the start address of each thread that is created.</blockquote>
+<br><br>
+Calling <i>LdrDisableThreadCalloutsForDl</i>l means that debugger callbacks can no longer reach our klhkum.dll, he then has no idea that our DLL exists.
+<br><br>
+The entry point journey is then completed at the final branch:
+                    </p>
+
+                    <pre>
+                        <code>
+loc_180004D54:
+mov     rbx, [rsp+38h+arg_0]
+mov     eax, 1
+add     rsp, 30h
+pop     rdi
+retn
+DllEntryPoint endp
+                        </code>
+                    </pre>
+<p>
+    Enough games, we didn't do all this just to have fun, well yes we did... Anyway, it's time to unhook!
+</p>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="https://shells.systems/wp-content/uploads/2019/04/lookatme.jpg">
+</div>
+
+<br><br>
+<h3><i>To be continued ...</i></h3>
+
+
+                    </div>
+                </div>
+            </div>
+        </article>
+        <!-- Footer-->
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-facebook-f fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; Yazid 2023</div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="js/scripts.js"></script>
+    </body>
+    <script>
+        Prism.highlightAll();
+      </script>
+</html>
