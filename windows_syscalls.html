@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Windows Kernel & Direct Syscalls</title>
+        <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+        <!-- Font Awesome icons (free version)-->
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <!-- Google fonts-->
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        <!-- Core theme CSS (includes Bootstrap)-->
+        <link href="css/styles.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-coy.min.css">
+
+
+    </head>
+    <body style="font-size: 17px;">
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="index.html">Yazid's notes</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="about.html">About</a></li>                    
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- Page Header-->
+        <header class="masthead" style="background-image: url('assets/img/ai.png')">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Antivirus/EDR Evasion : Diving into Windows Kernel & Direct Syscalls</h1>
+                            <h2 class="subheading">Let's take a closer look at the Windows APIs call chain and see how to bypass protection mechanisms that rely on it.</h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">Yazid</a>
+                                on June 18, 2023
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Post Content-->
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                 
+
+<h2> Kernel Gang, Going Dark..🥷🏼</h2>
+                        <p>
+The Windows kernel is a goldmine for red teamers, offensive security developers or software developers. Understanding the key mechanisms that govern this whole world is crucial. <br>One of the must-see concepts we will look at in this article is... System calls ! (aka Syscalls), how they are managed to be triggered by the API call chain, and where they are located. Since we are clearly in the context of cybersecurity and defense evasion, we will also try to implement a multi-level shellcode dropper using different levels of API call abstraction.<br>
+Through this article, we will focus on direct system calls, although indirect system calls are more relevant in bypassing today's EDR solutions (we will cover it in a future article).<br>
+<br>But before goind deeper, i would like to thank <b>Daniel Feichter alias @VirtualAllocEx</b> (redops.at) & <b>Mantvydas Baranauskas alias @mantvydasb</b> (ired.team) for their incredible work that inspired me to write this article and for their contribution to the cybersecurity community, their websites are among the references listed below.  
+                        </p>
+
+                        <p>
+Let's begin, here is the journey that follows the invocation of a function, regardless of its nature, at the highest level of abstraction in user mode :
+                        </p>
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/Function Journey (2).png">
+</div>
+<br>
+                        
+On Windows, system calls are generated by routines of the native API, specifically the <b>ntdll.dll</b> API, which serves as the lowest common user-mode denominator during the transition to kernel-mode as shown in the graph below. The code and instructions for ntdll's routines are located within the kernel. <br><br>
+
+<br>
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/windows_archi.png">
+</div>
+
+
+<br><br>
+A sequence of instructions is performed before the syscall is made. This sequence includes, among other things, filling the registers that will later be treated as parameters for the native function being called. The system call is triggered only once everything is set up and ready to be dispatched to the kernel. There is also a crucial step in this process which is filling the EAX register with what is known as the Syscall ID, Syscall number, or System Service Number (SSN). The value of the SSN may vary depending on the operating system version.
+
+The set of operations that aim to transition from user mode to kernel mode is called the <b>Syscall stub</b>. Here's an example:
+
+<br><br>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/syscall_ex.png">
+</div>
+
+<br>
+Here the value passed to the EAX register which is 6, is the Syscall ID.
+<br>
+
+<br>
+Therefore, the system call is the last step performed in user mode.
+
+When a system call is triggered, it is the KiSystemCall64 routine specific to ntoskrnl.exe that takes control and handles the call. This routine checks the validity of the system call and is responsible for its execution. As part of its process, this routine ensures to query the SSDT. 
+<br>
+<br>
+The System Service Dispatch Table (SSDT) maps a System Service Number (SSN) to the address of a specific routine. For example, SSN 0x254 corresponds to the address of the NtSuspendThread routine, which is exported by ntoskrnl.exe and located at address 0x805CAB5C. This is all we need to know about SSDT, however, it is important to note that the mechanisms governing the SSDT are much more complex. One method employed by EDR solutions is SSDT hooking, we may delve into this topic in a future article. For those interested, <a href="https://resources.infosecinstitute.com/topic/hooking-system-service-dispatch-table-ssdt/"><U>here is an article that explains in detail how SSDT works and how hooks are achieved on it</U></a>. Once the SSDT returns the result to KiSystemCall64, this routine passes it on to the System Service Dispatcher, which is responsible for executing the located routine.
+<br><br>
+Once the routine has been executed, its result is returned to the calling function through the RIP register.
+<br><br>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/call_chain_jumps_and_returns.png">
+</div>
+
+<br><br>
+<h1 style="text-align: center; color: red;"><i>ARTICLE UNDER CONSTRUCTION</i></h1>
+
+
+</div>
+                </div>
+            </div>
+        </article>
+        <!-- Footer-->
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <!--<li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-facebook-f fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>-->
+                            <li class="list-inline-item">
+                                <a href="http://github.com/xacone">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; Yazid 2023</div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="js/scripts.js"></script>
+    </body>
+    <script>
+        Prism.highlightAll();
+      </script>
+</html>
