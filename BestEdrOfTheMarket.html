@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Best EDR Of The Market</title>
+        <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+        <!-- Font Awesome icons (free version)-->
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <!-- Google fonts-->
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        <!-- Core theme CSS (includes Bootstrap)-->
+        <link href="css/styles.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-coy.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script>
+
+    </head>
+
+    <body style="font-size: 17px; zoom: 100%;">
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="index.html">Yazid's notes</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="about.html">About</a></li>                    
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- Page Header-->
+        <header class="masthead" style="background-image: url('assets/img/8-Ie1fNYcLaEPZVv1.png')">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Introducing the Best EDR Of The Market Project ⚔️​</h1>
+                            <h2 class="subheading">A Little AV/EDR Bypassing Lab for Training & Leaning Purposes</h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">Yazid</a>
+                                on November 13, 2023
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Post Content-->
+        <article class="mb-4" style=" text-align: justify; ">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+
+                        <a href="https://github.com/Xacone/BestEdrOfTheMarket" style="display: block; margin: 0 auto; text-align: center; border-radius: none;">
+                            <img src="https://github-readme-stats.vercel.app/api/pin/?username=Xacone&repo=BestEdrOfTheMarket" alt="ReadMe Card">
+                          </a>
+                          
+                          <br><br>
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                              <img width="100%" src="https://uniformsandink.com/wp-content/uploads/2022/11/Page_Under_Construction.jpg">
+                          </div>
+
+
+                    <br><br>
+                    <h2>TL;DR</h2>
+                        
+                    The Best EDR Of The Market (BEOTM) is an open source EDR designed to serve as a testing ground for understanding and bypassing the detection methods employed by many well-known EDRs.
+                    These methods focus on the dynamic analysis of a process and its states (memory, call stack, heap, API calls, etc.).
+                    
+                    <br>The purpose of this article is not to delve too deeply into details covered in other articles (which I may not explain any better), but rather to explore in sufficient detail the techniques employed by BEOTM and their underlying principles.
+
+                    <br><br>BEOTM runs in user mode and does not require any administrator right to attach itself to a remote process that is also not running in administrator mode.
+
+                    
+
+                    <br><br>
+                    <h2 id="dll-hooking">DLL Hooking ⚔️</h2>
+                    
+                    BEOTM performs DLL injection at multiple levels of abstraction, hooking critical functions such as those used for memory allocation, process or thread creation, changing a memory pool access rights, etc. This hooking is achieved by injecting the DLL into the target process.
+
+                    <br>
+                    Once injected, the DLL will redirect calls from hooked functions to its own internal routines to inspect their content and then decide whether or not to proceed with the call by invoking the original routine.
+                    <br>
+                    I'm certainly not reinventing the wheel (as in all techniques that are used), and many articles go into more detail about this process.
+
+                    <br><br>
+                    Obviously, the purpose of implementing this technique in BEOTM is not to analyze the parameters of each function, primarily for performance reasons: BEOTM distinguishes itself from the typical architecture in serving as both an agent and an analyzer/scheduler of responses. In contrast, a typical EDR would send the captured data to an external entity, which would then be responsible for orchestrating the response. 
+                    On the other hand, it would have been much more resource-intensive to initiate an analysis for each API call made by a targeted program. <br>Moreover, bypassing this mechanism primarily involves preventing the routines from being intercepted by the injected DLL. <br> Thus, the EDR either limits itself (for now) by showing a message through the standard output (for NTDLL hooks) or by displaying a MessageBox (for Kernelbase/Kernel32 hooks) alerting that the routine has been intercepted.
+
+                    <br><br><h4>Hooked Routines/Functions </h4>
+                    The functions that are hooked by the EDR (Endpoint Detection and Response) through the injected DLLs are described in the <code>"TrigerringFunctions.json"</code> file. Modifying this file or adding entries will not have any effect, as these details are provided in the file for informational purposes only. 
+
+                    <br><br>
+                    BEOTM's injectable DLLs rely on<a href="https://github.com/microsoft/Detours/"><b> <u>Microsoft Detours</u> </b></a>as an interface for API calls interception.
+                    
+                    <br><br>
+                    <a href="https://github.com/microsoft/Detours" style="display: block; margin: 0 auto; text-align: center; border-radius: none;">
+                        <img src="https://github-readme-stats.vercel.app/api/pin/?username=Microsoft&repo=Detours" alt="ReadMe Card">
+                      </a>
+                    <br>
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <img width="70%" src="assets/img/microsoft_detours1.png">
+                    </div>
+
+                    <br>
+                    A deep overview of what happens when <code>NtAllocateVirtualMemory</code> is intercepted by the DLL:                      
+                    <br><br>
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <img width="100%" src="assets/img/hooking_detours.png">
+                    </div>
+
+                    
+                    <br><br>
+                    <h2>Call Stack Monitoring 📚</h2>
+                    <pre style="font-size: 13px;">
+                        <code>int main() {
+    size_t memSize = 4096; // 4 Ko
+
+    LPVOID pMemory = VirtualAlloc(nullptr, memSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    return 0;
+}</code></pre>
+                     <pre class="cpp" style="font-size: 13px;">
+                        <code>
+KERNELBASE!VirtualAlloc+0x22:
+00007ffb`9bdd1402 4183e0c0        and     r8d,0FFFFFFC0h
+00007ffb`9bdd1406 44894c2428      mov     dword ptr [rsp+28h],r9d
+00007ffb`9bdd140b 4489442420      mov     dword ptr [rsp+20h],r8d
+00007ffb`9bdd1410 4c8d4c2448      lea     <b style="color: red;">r9</b>,[rsp+48h]
+00007ffb`9bdd1415 4533c0          xor     <b style="color: red;">r8d</b>,r8d
+00007ffb`9bdd1418 488d542440      lea     <b style="color: red;">rdx</b>,[rsp+40h]
+00007ffb`9bdd141d 498d48ff        lea     <b style="color: red;">rcx</b>,[r8-1]
+00007ffb`9bdd1421 48ff1500ea1f00  call    qword ptr [<b style="color: red;">KERNELBASE!_imp_NtAllocateVirtualMemory</b> (00007ffb`9bfcfe28)]
+00007ffb`9bdd1428 0f1f440000      nop     dword ptr [rax+rax]
+00007ffb`9bdd142d 85c0            test    eax,eax
+00007ffb`9bdd142f 780b            js      KERNELBASE!VirtualAlloc+0x5c (00007ffb`9bdd143c)
+                        </code>
+                     </pre>
+
+
+                     <br><br>
+                     <div style="display: flex; justify-content: center; align-items: center;">
+                         <img width="100%" src="assets/img/call_stack_args.png">
+                     </div>
+
+                     <br><br>
+                     <div style="display: flex; justify-content: center; align-items: center;">
+                         <img width="100%" src="assets/img/call-stack-monitoring-shellcode-detection.png">
+                     </div>
+
+                     <br><br>
+                     <div style="display: flex; justify-content: center; align-items: center;">
+                         <img width="80%" src="assets/img/rip-monitoring-algorithm.png">
+                     </div>
+                     
+
+                    <br><br>
+                    <h2>IAT Hooking ⚔️</h2><br>
+
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/img/IAT hooking through a loaded DLL.png">
+                        </div><br>
+
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/img/IATHookingRegsitersPreservation.png">
+                        </div>
+                  
+
+                    <br><br>
+                    <h2 id="dll-hooking">SSN Crushing🥊</h2>
+
+                    <br>
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <img width="100%" src="assets/img/ssn-crushing-error.png">
+                    </div>
+
+                    <br>
+                    <h2>Yaro rules 🔍​</h2><br>
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <img width="100%" src="assets/img/shellcode_content_once_decrypted.png">
+                    </div>
+
+                      <br>
+                    <h2></h2><br>
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <img width="100%" src="assets/img/shellcode_content_once_decrypted.png">
+                    </div>
+                        
+                        <br><br>
+<p><i>I'm still learning so if you have a comment or observation on this article, feel free to contact me, my email addresses are on my <a href="https://github.com/Xacone">Github profile</a> 😸</i></p>
+
+                    </div>
+                </div>
+            </div>
+        </article>
+        <!-- Footer-->
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <!--<li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-facebook-f fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>-->
+                            <li class="list-inline-item">
+                                <a href="http://github.com/xacone">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; Yazid 2023</div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="js/scripts.js"></script>
+    </body>
+    <script>
+        Prism.highlightAll();
+      </script>
+</html>
