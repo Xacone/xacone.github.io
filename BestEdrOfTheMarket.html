@@ -82,9 +82,9 @@
                     The Best EDR Of The Market (BEOTM) is an open source EDR designed to serve as a testing ground for understanding and bypassing some of the detection mechanisms employed by many well-known EDRs.
                     These methods focus on the dynamic analysis of a process and its states (memory, call stack, heap, API calls, etc.).
                     
-                    <br>The purpose of this article is not to delve too deeply into details of these methods covered in other articles (which I may not explain any better), but to give a brief overview of these methods are implemented in BEOTM.
+                    <br>The purpose of this article is not to delve too deeply into details of these methods that are fully covered in other articles (which I may not explain any better), but to give a brief overview of how these methods are implemented in BEOTM.
 
-                    <br><br>BEOTM runs in user mode and does not require any administrator right to attach itself to a remote process that is also not running in administrator mode.
+                    <!--<br><br>BEOTM runs in user mode and does not require any administrator right to attach itself to a remote process that is also not running in administrator mode -->
 
                     <br><br>
                     <div style="display: flex; justify-content: center; align-items: center;">
@@ -94,13 +94,11 @@
                     <br><br>
                     <h2 id="dll-hooking">DLL Hooking ⚔️</h2>
                     
-                    BEOTM performs DLL injection at multiple levels of abstraction, hooking critical functions such as those used for memory allocation, process or thread creation, changing a memory pool access rights, etc. This hooking is achieved by injecting the DLL into the target process.
+                    BEOTM performs DLL injection at multiple levels of abstraction, hooking sensitive functions such as those used for memory allocation, process or thread creation/manipulation, changing memory pools access rights, etc. This hooking is achieved by injecting the DLL into the target process.
 
                     <br>
                     Once injected, the DLL will redirect calls from hooked functions to its own internal routines to inspect their content and then decide whether or not to proceed with the call by invoking the original routine.
-                    <br>
-                    I'm certainly not reinventing the wheel (as in all techniques that are used), and many articles go into more detail about this process.
-
+                    
                     <br><br>
                     Obviously, the purpose of implementing this technique in BEOTM is not to analyze the parameters of each function, primarily for performance reasons: BEOTM distinguishes itself from the typical architecture in serving as both an agent and an analyzer/scheduler of responses. In contrast, a typical EDR would send the captured data to an external entity, which would then be responsible for orchestrating the response. 
                     On the other hand, it would have been much more resource-intensive to initiate an analysis for each API call made by a targeted program. <br>Moreover, bypassing this mechanism primarily involves preventing the routines from being intercepted by the injected DLL. Thus, the EDR either limits itself (for now) by showing a message through the standard output (for NTDLL hooks) or by displaying a MessageBox (for Kernelbase/Kernel32 hooks) alerting that the routine has been intercepted.
@@ -129,7 +127,7 @@
                     If you're wondering why interceptions at the NT level only return a message to the standard output, unlike interceptions at the Kernel32 level, it's because the NT level is much more sensitive, being very low-level: Displaying a large messagebox could interfere with or corrupt the interception.
 
                     <br><br><h4>Hooked Routines/Functions </h4>
-                    The functions that are hooked by the EDR (Endpoint Detection and Response) through the injected DLLs are described in the <code>"TrigerringFunctions.json"</code> file. Modifying this file or adding entries will not have any effect, as these details are provided in the file for informational purposes only. The release version of BEOTM includes precompiled DLLs, but you can still compile the DLLs from the repo sources with the functions you want to intercept. 🪝 
+                    The functions that are hooked by the EDR through the injected DLLs are described in the <code>"TrigerringFunctions.json"</code> file. The release version of BEOTM includes precompiled DLLs, but you can still compile the DLLs from the repo sources with the functions you want to intercept. 🪝 
 
                     <br><br>
                     BEOTM's injectable DLLs rely on<a href="https://github.com/microsoft/Detours/"><b> <u>Microsoft Detours</u> </b></a>as an interface for API calls interception.<br>
@@ -156,8 +154,9 @@
                     <br><br>
                     <h2>Threads Call Stack Monitoring ⚔️​</h2>
                      This method involves the continuous monitoring of the RIP instruction register of each thread. When the RIP register points to the address of an exported routine/function from any DLL or to the address of an area contained in the implementation of this export, and the user has specified in the <code>TrigerringFunctions.json</code> file that they want to monitor this routine/function, the thread is paused, and its call stack is unwound. All parameters of all routines it stacks are analyzed. If a sequence of bytes in a parameter matches a predefined pattern in the <code>YaroRules.json</code> file, the process is stopped, and an alert is issued! 🚨
+                     <br>
 
-                    Unlike DLL hooking & IAT hooking, there is indeed a response with this method, and you can specify in the <code>TrigerringFunctions.json</code> file which functions you want to monitor at the thread call stack level and you can define the patterns you want to identify in <code>YaroRules.json</code>.
+                    Unlike DLL hooking & IAT hooking, there is indeed a response with this method: You can specify in the <code>TrigerringFunctions.json</code> file which functions you want to monitor at the thread call stack level and you can define the patterns you want to identify in <code>YaroRules.json</code>.
 
 
                     <br><br>
@@ -235,7 +234,7 @@ Here's a global conditional diagram of how threads call stack monioring works on
                         </div><br><br>
 
                         A MessageBox is shown for each intercepted function.<br><br>
-
+                        <b><i>IAT-hooking VS Reflective DLL Loader:</i></b><br><br>
                         <div style="display: flex; justify-content: center; align-items: center;">
                             <img width="120%" src="assets/img/iat_hooking.gif">
                         </div><br>
@@ -265,7 +264,7 @@ Here's a global conditional diagram of how threads call stack monioring works on
                     <br>
                     <h2>Yaro rules 🔍​</h2>
 
-                    The YaroRules.json file contains nothing more than the patterns you wish to identify. You can have fun searching for interesting patterns common to many shellcodes/payloads, like in this example that identifies patterns related to accessing the PEB and traversing the double-linked list LDR for a metasploit-generated reverse TCP shellcode.
+                    The YaroRules.json file contains nothing more than the patterns you wish to identify. You can have fun searching for interesting patterns common to many shellcodes/payloads, like in this example that identifies patterns related to accessing the PEB and traversing LDR entries for a metasploit-generated reverse TCP shellcode.
                     
                     <br><br>
                     <div style="display: flex; justify-content: center; align-items: center;">
@@ -288,9 +287,9 @@ Here's a global conditional diagram of how threads call stack monioring works on
 }</code></pre>
 <br>
                     <h2>Epilogue</h2>
-                    I tried to provide a very quick overview of the techniques implemented in BEORM without going into details about the bypass methods for each defense mechanism shown here.<br>
+                    I tried to provide a very quick overview of the techniques implemented in BEOTM without going into details about the bypassing methods for each defense mechanism shown here.<br>
                     I am far from being an expert in EDR evasion or defense mechanisms, but I thought it would be fun and instructive to build my own EDR that implements techniques whose bypassing is within reach for anyone with a basic knowledge of low-level programming and Windows internals.
-                    If interested, do not hesitate to delve into the source code of the EDR and take a look at the ways in which the user-mode defensive mechanisms are implemented, particularly with regard to access to the memory of the remote process. 😉🏴‍☠️​
+                    If interested, do not hesitate to delve into the source code of the EDR and take a look at the ways in which the user-mode defensive mechanisms are implemented, particularly with regard to remote processes memory access. 😉🏴‍☠️​
                         <br><br>
 <p><i>I'm still learning so if you have a comment or observation on this article, feel free to contact me, my email addresses are on my <a href="https://github.com/Xacone">Github profile</a> 😸</i></p>
 
