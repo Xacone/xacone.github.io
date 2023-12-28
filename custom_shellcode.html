@@ -568,26 +568,6 @@ int main() {
 
 <p style="text-align: center;">Boouum ! Shellcode executed successfully !!😺🏴‍☠️</p>
 
-<h4>How do functions such as EnumFontsW could execute shellcode? </h4>
-
-<p>To answer this question, it is necessary to bring up Windbg and set a breakpoint on EnumFontsW.</p>
-
-<pre class="text"><code>0:000> bp GDI32!EnumFontsW
-0:000> g
-ModLoad: 00007ffe`c6dc0000 00007ffe`c6df1000   C:\Windows\System32\IMM32.DLL
-Breakpoint 0 hit
-GDI32!EnumFontsW:
-00007ffe`c76c7600 ff255add0100    jmp     qword ptr [GDI32!_imp_EnumFontsW (00007ffe`c76e5360)] ds:00007ffe`c76e5360={GDI32!_imp_load_EnumFontsW (00007ffe`c76c75e5)}
-</code></pre>
-
-<p>By looking at the stack trace of our program at this point, we can see that at the lowest level of abstraction, specifically in NTDLL, EnumFontsW calls <b>ntdll!RtlUserThreadStart</b>, a routine responsible for creating a user-mode thread. Everything becomes clear.</p>
-
-<div style="display: flex; justify-content: center; align-items: center;">
-    <img width="100%" src="assets/img/EnumFontsWstackTrace.png">
-</div>
-
-
-<br>
 <p style="font-style: none; font-size: 20px;"><b><i>References :</i></b></p>
 <i>
 
