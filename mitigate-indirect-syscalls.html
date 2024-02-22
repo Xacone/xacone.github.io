@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Catching Potential Indirect Syscalls</title>
+        <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+        <!-- Font Awesome icons (free version)-->
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <!-- Google fonts-->
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        <!-- Core theme CSS (includes Bootstrap)-->
+        <link href="css/styles.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-coy.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script>
+
+        <script src="js/imagezoom.js"> </script>
+        <link rel="stylesheet" href="css/imagezoom.css">
+    </head>
+
+    <style>
+        body {
+            color: black;
+        }
+    </style> 
+
+    <body style="font-size: 17px; zoom: 90%;">
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="index.html">Yazid's notes</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="about.html">About</a></li>                    
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- Page Header-->
+        <header class="masthead" style="background-image: url('assets/img/ai.png')">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Catching Potential Indirect Syscalls</h1>
+                            <h2 class="subheading">Leveraging Hardware Breakpoints, Vectored Exception Handling & Stack Pointers for Catching Potential Indirect Syscalls.</h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">Yazid</a>
+                                on February 22, 2024
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Post Content-->
+        <article class="mb-4" style=" text-align: justify; ">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+
+                        <h4>Context</h4>
+
+                        Been a little overwhelmed by school work & exams for the last weeks, since it is now over, i went back working on the next <a style="text-decoration: underline;" href="https://github.com/Xacone/BestEdrOfTheMarket">BestEdrOfTheMarket's</a> release.
+                        I never thought a simply little thing like this would be so appreciated that's so why im planning to put more defensive methods over time & let people have fun with it.<br>
+                        Last weekend I thought of a cool method for detecting potential indirect/illegitimate syscalls by leveraging Vectored Exception Handlers (VEH), hardware breakpoints & stack pointers, and decided to get up to put some effort into it and implement it in BEOTM.
+                        
+                        <br><br>We'll be targetting <b><a style="text-decoration: underline;" href="https://github.com/Maldev-Academy/HellHall">Hell's Hall</a></b> from @Maldev-Academy, a shellcode loader which combine Indirect Syscalls & Hell's Gate.
+                        <br>
+                        <br>
+                        That is just a funny proof of concept that i though of in a week-end which is certainly improvable and surely faillibe if some work is put on, <b> so not to be taken tooooo seriously 🤡.</b><br>
+                        <br>
+                        
+                        <h4 style="text-align: left;">Catching Direct Syscalls w/ Instrumentation Callbacks</h4>
+
+                        
+                        The following method, which has been implemented by @wintrnl and <a href="https://winternl.com/detecting-manual-syscalls-from-user-mode/"><u><b>which I won't explain any better than him</b></u></a><link>, consists in defining an instrumentation callback with <code>NtSetInformationProcess</code> so as to invoke a predefined routine for each return from the kernel to user mode. 
+                        <br><br>It is a nice trick for catching illegitimate syscalls since we could easily intercept RIP and apply a sanity check for, either by checking whether a symbol can be resolved from it or by holding a list of export addresses and checking whether RIP is included between each <code>legitAddress</code> and <code>legitAddress+0x14</code> within that list. 
+                        <br>
+                        <br>
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/img/direct_syscalls_inst_callbacks_ex1.png">
+                        </div>
+   
+                        <br>
+
+                        <br>
+                        <h4 style="text-align: left;">The Problem when Indirect Syscalls</h4>
+                        Indirect syscalls consist in locating a syscall instruction within ntdll and jumping to it once the stub is made and the SSN value pushed into <code>RAX</code>, this way, once intercepted <code>RIP</code> is clean as it emanates from a legitimate <code>ret</code> within ntdll.
+                        <br>
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/img/indirect_syscalls_problems.png">
+                        </div>
+
+                        <br>
+                        <h4>The Magic Trick 🧙</h4>
+                        Let me hold for a second what Hell's Hall is doing then fire up a debugger :<br>
+                        <a href="https://github.com/Maldev-Academy/HellHall/blob/main/Hell'sHall/Hell'sHall/AsmHell.asm"><i>HellHall/Hell'sHall/Hell'sHall/AsmHell.asm</i></a>
+                        <pre class="assembly">
+                            <code class="asm">public HellHall
+HellHall proc
+	mov r10, rcx
+	mov eax, dwSSN
+	jmp qword ptr [qAddr] ; JUMPING TO A ADDRESS WHERE WE HAVE `syscall` INSTRUCTION - SO THAT IT LOOKS LEGIT
+	ret
+HellHall endp
+end </code></pre>
+                        It cooks the value of the SSN then jumps to the syscall address that it has previously calculated, as intended. <i>Note that the way the SSN is retrieved does not have any effect on that trick whether it's Hell's, Tartarus or even Obama Gate</i>.
+
+                        <pre class="text" style="font-size: 13px;">
+                            <code>// <i><b>We're before the jump</b></i>
+
+0:000> p
+Hell_sHall!HellHall+0x9:
+00007ff7`5c6e2577 ff25d7bb0000    jmp     qword ptr [Hell_sHall!qAddr (00007ff7`5c6ee154)] ds:00007ff7`5c6ee154=00007ffdf800f672
+0:000> k
+ # Child-SP          RetAddr               Call Site
+00 000000ea`628ff768 00007ff7`5c6e224e     Hell_sHall!HellHall+0x9 
+01 000000ea`628ff770 00007ff7`5c6e2e79     Hell_sHall!main+0xee 
+02 000000ea`628ff950 00007ff7`5c6e2d1e     Hell_sHall!invoke_main+0x39
+03 000000ea`628ff9a0 00007ff7`5c6e2bde     Hell_sHall!__scrt_common_main_seh+0x12e 
+04 000000ea`628ffa10 00007ff7`5c6e2f0e     Hell_sHall!__scrt_common_main+0xe 
+05 000000ea`628ffa40 00007ffd`f628257d     Hell_sHall!mainCRTStartup+0xe 
+06 000000ea`628ffa70 00007ffd`f7fcaa58     KERNEL32!BaseThreadInitThunk+0x1d
+07 000000ea`628ffaa0 00000000`00000000     ntdll!RtlUserThreadStart+0x28
+
+0:000> p
+ntdll!NtAllocateVirtualMemory+0x12:
+<div style="color: red;"><b>00007ffd`f800f672 0f05            syscall</b></div>
+// <i><b>We're after the jump, in the NtAllocateVirtualMemory stub</b></i>
+
+0:000> k
+ # Child-SP          RetAddr               Call Site
+<div style="color: red;"><b>00 000000ea`628ff768 00007ff7`5c6e224e     ntdll!NtAllocateVirtualMemory+0x12</b></div>01 000000ea`628ff770 00007ff7`5c6e2e79     Hell_sHall!main+0xee
+02 000000ea`628ff950 00007ff7`5c6e2d1e     Hell_sHall!invoke_main+0x39
+03 000000ea`628ff9a0 00007ff7`5c6e2bde     Hell_sHall!__scrt_common_main_seh+0x12e 
+04 000000ea`628ffa10 00007ff7`5c6e2f0e     Hell_sHall!__scrt_common_main+0xe
+05 000000ea`628ffa40 00007ffd`f628257d     Hell_sHall!mainCRTStartup+0xe
+06 000000ea`628ffa70 00007ffd`f7fcaa58     KERNEL32!BaseThreadInitThunk+0x1d
+07 000000ea`628ffaa0 00000000`00000000     ntdll!RtlUserThreadStart+0x28
+                            </code></pre>
+                        A savage non legit <code>NtAllocateVirtualMemory+0x12</code> pops at the top of the stack.
+                        Assuming that an invocation to ntdll must emanate from, and only from, <code>Kernel32.dll</code>, <code>KernelBase.dll</code> or <code>User32.dll</code>, it make sense that the value of <code>*((VOID)RSP)</code> should be equal to one of their exports addresses when RIP is inside a ntdll stub. 
+                        <br>So what if we decide to protect that specific routine and set a hardware breakpoint on <code>NtAllocateVirtualMemory+0x14 (ret)</code> coupled to a Vectored Exception Handler that will, once the <code>ret</code> is reached, capture the context and check if <code>*((VOID)RSP)</code> is a legit calling routine. The hardware bp & VEH could be set from an injected DLL.
+                        <br>
+
+<br>
+Supposing that <code>rspIsAValidOverlyingDllExport</code> will iterate over a list of the known <code>Kernel32</code> & <code>KernelBase</code> exports which it has retrieved before, we define our exception handler as follows :
+
+                        <pre class="cpp" style="font-size: 13px;">
+                            <code>LONG WINAPI exceptionHandler(PEXCEPTION_POINTERS exceptions) {
+    if (exceptions->ExceptionRecord->ExceptionCode == EXCEPTION_SINGLE_STEP) {
+        if(!rspIsAValidOverlyingDllExport(*((PVOID*)exceptions->ContextRecord->Rsp))) { 
+            printf("Potential malicious program doing potential indirect syscalls");
+            exit(-1);
+        }
+        clearHardwareBreakpoint(exceptions->ContextRecord, 0);
+        return EXCEPTION_CONTINUE_EXECUTION;
+    }
+    else {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+}</code></pre>
+                        The following code retrieves all the process threads and sets a hardware breakpoint on the <code>DR0</code> debug register within each thread context.<br>
+                        <br>
+                        <code>enableBreakpoint</code> <u><a href="https://gist.github.com/CCob/fe3b63d80890fafeca982f76c8a3efdf#file-patchless_amsi-h-L40"><i>implementation has been stolen from <b>@EthicalChaos</a></i></u></b></code>
+                        <pre class="cpp" style="font-size: 13px;">
+                            <code>hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+ if (hSnap != INVALID_HANDLE_VALUE) {
+     THREADENTRY32 te;
+     te.dwSize = sizeof(te);
+     if (Thread32First(hSnap, &te)) {
+         do {
+             if (te.dwSize >= FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) +
+                 sizeof(te.th32OwnerProcessID) && (te.th32OwnerProcessID == GetProcessId(GetCurrentProcess()))) {
+                     HANDLE thHandle = OpenThread(THREAD_ALL_ACCESS, FALSE, te.th32ThreadID);
+                     thHandles.push_back(thHandle);
+             }
+             te.dwSize = sizeof(te);
+         } while (Thread32Next(hSnap, &te));
+     }
+     CloseHandle(hSnap);
+ }
+
+ for (auto thHandle : thHandles) {
+     CONTEXT ctx;
+     ctx.ContextFlags = CONTEXT_ALL;
+
+     hExHandler = AddVectoredExceptionHandler(1, exceptionHandler);
+
+     if (GetThreadContext(thHandle, &ctx)) {
+        enableBreakpoint(ctx, (PVOID)((DWORD_PTR)NtAlloc+0x14 )/* Nt/ZwProtectVirtualMemory+0x14 */, 0);
+	    SetThreadContext(thHandle, &ctx);
+	 }
+ }</code></pre>
+                        POC of defeating Hell's Hall : 
+                        <br><br>
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/img/defeating_hells_gall.gif">
+                        </div>
+                        <br>
+                        Some might say "yeah but it could be bypassed by jumping to a <code>syscall</code> located in another stub". All it takes to catch that is to set an instrumentation callback that resolves <code>RIP</code> : if <code>RIP</code> corresponds to <code>NtAllocateVirtualMemory</code> then the <code>ret</code> address should be part of <code>NtAllocateVirtuamMemory</code>'s stub.
+
+                        
+                        <br><br>
+                        In order to bypass that little trick, Hell's Hall could be enhanced with <s>Stack Spoofing</s> a ROP chain that triggers a <code>ret</code> from <code>VirtualAlloc</code>/<code>VirtualAllocEx</code> before invoking <code>NtAllocateVirtualMemory</code>. That way, <code>(*(VOID)RSP)</code> would be pointing to a legit caller. 
+                        
+                        <br><br>That little trick will be featured in the next BEOTM's release as it is sufficient to catch a bunch of offensive tools doing indirect syscalls stuff. :)
+                        <br>
+                        <br><br>
+                    </div>
+                </div>
+            </div>
+        </article>
+        <!-- Footer-->
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <!--<li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-facebook-f fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>-->
+                            <li class="list-inline-item">
+                                <a href="http://github.com/xacone">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; Yazid 2023</div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="js/scripts.js"></script>
+    </body>
+    <script>
+        Prism.highlightAll();
+      </script>
+</html>
