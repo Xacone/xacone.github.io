@@ -207,7 +207,7 @@ Supposing that <code>rspIsAValidOverlyingDllExport</code> will iterate over a li
      hExHandler = AddVectoredExceptionHandler(1, exceptionHandler);
 
      if (GetThreadContext(thHandle, &ctx)) {
-        enableBreakpoint(ctx, (PVOID)((DWORD_PTR)NtAlloc+0x14 )/* Nt/ZwProtectVirtualMemory+0x14 */, 0);
+        enableBreakpoint(ctx, (PVOID)((DWORD_PTR)NtAlloc+0x14 )/* Nt/ZwAllocateVirtualMemory+0x14 */, 0);
 	    SetThreadContext(thHandle, &ctx);
 	 }
  }</code></pre>
