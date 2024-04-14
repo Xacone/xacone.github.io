@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Best EDR Of The Market v1.1.0</title>
+        <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+        <!-- Font Awesome icons (free version)-->
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <!-- Google fonts-->
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        <!-- Core theme CSS (includes Bootstrap)-->
+        <link href="css/styles.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-coy.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script>
+
+        <script src="js/imagezoom.js"> </script>
+        <link rel="stylesheet" href="css/imagezoom.css">
+    </head>
+
+    <style>
+        body {
+            color: black;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style> 
+    <body style="font-size: 17px; zoom: 90%;">
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="index.html">Yazid's notes</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="about.html">About</a></li>                    
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- Page Header-->
+        <header class="masthead" style="background-image: url('assets/img/beotm_banner_1_1_0.png')">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Best EDR Of The Market v1.1.0 🐲​​</h1>
+                            <h2 class="subheading">I see no opponents righ up there.</h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">Yazid</a>
+                                on April 19, 2024
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Post Content-->
+        <article class="mb-4" style=" text-align: justify; ">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+
+                        <br><br>
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="110%" src="assets/img/beotm_banner2.png">
+                        </div>    
+
+                        <br><br>
+                          <a href="https://github.com/Xacone/BestEdrOfTheMarket" style="display: block; margin: 0 auto; text-align: center; border-radius: none;">
+                            <img src="https://github-readme-stats.vercel.app/api/pin/?username=Xacone&repo=BestEdrOfTheMarket" alt="ReadMe Card">
+                          </a>
+
+                          <!--<blockquote style="text-align: center;"><i>You gotta worry bout' them malicious processes...</i></blockquote>-->
+
+                          <br><br>
+                          The first version was quite simple and although it was fairly appreciated, it lacked of active response capacities. 
+                        
+                          <br>
+                          <br>
+                          <h3>Active Response & YARA Rules ❤️​</h3>
+
+                          Injected DLLs and the EDR now communicate via named pipes. Each purpose has its own named piple channel.
+                          <br>
+                          DLLs send relevant data (buffer addresses, instruction pointers, stack pointers...) to the BEOTM. The EDR then analyzes the data and decides whether the process is malicious or not. 
+
+                          <br><br>
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                              <img width="110%" src="assets/img/beotm_named_pipes_scheme.png">
+                          </div>    
+
+                          BEOTM does now supports YARA rules ! Put your Yara files in the YARA/ directory within and specify the /yara flag when launching it, they will be compiled and used for pattern scanning at multiple levels.
+
+
+                          <br><br>
+                          J'ai pas mal joué avec la règle de Metasploit durant mes tests, je vous conseille de faire de même, celle-ci provient du magnifique dépot d'Elastic Security : 
+
+                          <pre class="text" style="text-align: left;">
+                            <code>rule Windows_Trojan_Metasploit_38b8ceec {
+    meta:
+        author = "Elastic Security"
+        id = "38b8ceec-601c-4117-b7a0-74720e26bf38"
+        fingerprint = "44b9022d87c409210b1d0807f5a4337d73f19559941660267d63cd2e4f2ff342"
+        creation_date = "2021-03-23"
+        last_modified = "2021-08-23"
+        description = "Identifies the API address lookup function used by metasploit. Also used by other tools (like beacon)."
+        threat_name = "Windows.Trojan.Metasploit"
+        severity = 85
+        arch_context = "x86"
+        scan_context = "file, memory"
+        license = "Elastic License v2"
+        os = "windows"
+    strings:
+        $a1 = { 89 E5 31 D2 64 8B 52 30 8B 52 0C 8B 52 14 8B 72 28 0F B7 4A 26 31 FF 31 C0 AC 3C 61 }
+    condition:
+        $a1
+}</code>
+</pre>
+
+
+<pre>
+  <code>
+{
+  "Version" : "1.1.0",
+  "MaliciousPID" : "0",
+  "MalicousProcessPath" : "",
+  "DefenseMechanism" : "Hooked NtAllocateVirtualMemory",
+  "DateTime" : "Apr  1 2024 02:54:35",
+  "Address" : "0x00000dcc450100",
+  "DetectedPattern" : "d265488b5260488b5218488b5220488b725048",
+  "PatternList" : "DLL Patterns",
+  "FoundIn" : "fc4883e4f0e8c0000000415141505251564831d265488b5260488b5218488b5220488b7250480fb74a4a4d31c94831c0ac3c617c022c2041c1c90d4101c1e2ed524151488b52208b423c4801d08b80880000004885c074674801d0508b4818448b40204901d0e35648ffc9418b34884801d64d31c94831c0ac41c1c90d4101c138e075f14c034c24084539d175d858448b40244901d066418b0c48448b401c4901d0418b04884801d0415841585e595a41584159415a4883ec204152ffe05841595a488b12e957ffffff5d49be7773325f3332000041564989e64881eca00100004989e549bc0200115cc0a8204a41544989e44c89f141ba4c772607ffd54c89ea68010100005941ba29806b00ffd550504d31c94d31c048ffc04889c248ffc04889c141baea0fdfe0ffd54889c76a1041584c89e24889f941ba99a57461ffd54881c44002000049b8636d640000000000415041504889e25757574d31c06a0d594150e2fc66c74424540101488d442418c600684889e6565041504150415049ffc0415049ffc84d89c14c89c141ba79cc3f86ffd54831d248ffca8b0e41ba08871d60ffd5bbf0b5a25641baa695bd9dffd54883c4283c067c0a80fbe07505bb4713726f6a00594189daffd5700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+}
+</code>
+</pre>
+
+<pre class="text" style="text-align: left;">
+    <code>[!] Malicious process detected ! Killing it ....
+{
+  "Version" : "1.1.0",
+  "MaliciousPID" : "8540",
+  "MaliciousProcessPath" : "C:\ShellcodeDropper\ShellcodeDropper.exe",
+  "DefenseMechanism" : "Yara rule matching detected.",
+  "DateTime" : "Mar 30 2024 13:23:43",
+  "YaraRuleName :"Windows_Trojan_Metasploit_a6e956c9",
+  "YaraRuleNamespace : " : "Elastic Security",
+}
+0x00000000: 60 89 e5 31 c0 64 8b 50 30 8b 52 0c 8b 52 14 8b  `..1.d.P0.R..R..
+0x00000010: 72 28 0f b7 4a 26 31 ff ac 3c 61 7c 02 2c 20     r&#40;&#46;&#46;J&amp;1&#46;&#60;a&#124;&#46;&#44;
+
+</code>
+</pre>
+
+Metasploit artefacts are a good playground ..
+
+                          <br>
+                          <h3>Active hooks 🪝</h3>
+
+                          <br><br>
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                              <img width="110%" src="assets/img/beotm_ntdll_active.png">
+                          </div>    
+
+                          Trying with Metasploit shellcodes... <br><br>
+
+                            
+                          <h4>Kernel32/Base hooks</h4><br>
+                          <table>
+                            <tr>
+                              <th>Function</th>
+                              <th>Description</th>
+                            </tr>
+                            <tr>
+                              <td>VirtualAlloc</td>
+                              <td>Allocate memory in the virtual address space of a process.</td>
+                            </tr>
+                            <tr>
+                              <td>WriteProcessMemory</td>
+                              <td>Write data to the memory of a specified process.</td>
+                            </tr>
+                            <tr>
+                              <td>VirtualFree</td>
+                              <td>Release or decommit a region of memory previously allocated.</td>
+                            </tr>
+                            <tr>
+                              <td>VirtualFreeEx</td>
+                              <td>Release or decommit a region of memory in a specified process.</td>
+                            </tr>
+                            <tr>
+                              <td>VirtualProtect</td>
+                              <td>Change the protection on a region of committed pages in the virtual address space of a process.</td>
+                            </tr>
+                            <tr>
+                              <td>MapViewOfFile</td>
+                              <td>Create a view of a file mapping into the address space of the calling process.</td>
+                            </tr>
+                            <tr>
+                              <td>VirtualProtectEx</td>
+                              <td>Change the protection on a region of committed pages in the virtual address space of a specified process.</td>
+                            </tr>
+                            <tr>
+                              <td>UnmapViewOfFile</td>
+                              <td>Unmap a mapped view of a file from the calling process's address space.</td>
+                            </tr>
+                            <tr>
+                              <td>VirtualQuery</td>
+                              <td>Retrieve information about a range of pages in the virtual address space of a specified process.</td>
+                            </tr>
+                            <tr>
+                              <td>ReadProcessMemory</td>
+                              <td>Read data from the memory of a specified process.</td>
+                            </tr>
+                            <tr>
+                              <td>InternetOpenUrlW</td>
+                              <td>Opens a URL for reading on the internet.</td>
+                            </tr>
+                            <tr>
+                              <td>InternetReadFile</td>
+                              <td>Reads data from a handle opened by the InternetOpenUrl or InternetOpenUrlW function.</td>
+                            </tr>
+                            <tr>
+                              <td>InternetReadFileExW</td>
+                              <td>Reads data from a handle opened by the InternetOpenUrl or InternetOpenUrlW function, and can also return additional data.</td>
+                            </tr>
+                            <tr>
+                              <td>InternetOpenW</td>
+                              <td>Initializes an application's use of the WinINet functions.</td>
+                            </tr>
+                          </table>
+
+                          <br><br>
+                          <h4>NTDLL hooks </h4>
+                          <br>
+
+                            <table>
+                            <tr>
+                                <th>Function</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td>NtAllocateVirtualMemory</td>
+                                <td>Allocate memory in the virtual address space of a process using native API.</td>
+                            </tr>
+                            <tr>
+                                <td>NtProtectVirtualMemory</td>
+                                <td>Change the protection on a region of committed pages in the virtual address space of a process using native API.</td>
+                            </tr>
+                            <tr>
+                                <td>NtWriteVirtualMemory</td>
+                                <td>Write data to the memory of a specified process using native API.</td>
+                            </tr>
+                            <tr>
+                                <td>NtFreeVirtualMemory</td>
+                                <td>Release or decommit a region of memory previously allocated using native API.</td>
+                            </tr>
+                            <tr>
+                                <td>NtMapViewOfSection</td>
+                                <td>Create a view of a section of a file mapping into the address space of the calling process using native API.</td>
+                            </tr>                          
+                          </table>
+
+                          <br>
+                          <h5>APC Queue Metasploit Shellcode Injector vs WriteVirtualMemory hook (/k32) + YARA</h5>
+
+                          <br>
+
+                          <h5>NT-Level Metasploit Shellcode Loader vs  (/nt) + YARA</h5>
+
+
+                          <br>
+                          <h3>Heap Monitoring 🔍​</h3>
+
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="110%" src="assets/img/beotm_heap_monitoring .png">
+                          </div>    
+
+                          <br>
+                          <h3>Renewed Threads Call Stack Monitoring Methodology🔋​</h3>
+
+                          Le fichier trigerringfunctions n'a plus aucun impact
+
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="110%" src="assets/img/beotm_heap_monitoring .png">
+                          </div>  
+
+                          <br>
+                          <h3>Unbacked Threads Start Addresses Detection 👺</h3>
+
+                          <br> 
+                          <h3>ETW & AMSI Patching Mitigation 💀</h3>
+
+                          <br> 
+                          <h3>Direct Syscalls Who ? </h3>
+
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="110%" src="assets/img/direct_syscalls_check.png">
+                          </div>  
+
+                          <br>
+                          <h5>DefensiveInjector VS RIP Sanity Check</h5>
+
+                          <pre class="text">
+                            <code>[!] Direct Syscall stub at 0000000000401E7B
+
+{
+  "Version" : "1.1.0",
+  "MaliciousPID" : "10368",
+  "MaliciousProcessPath" : "C:\Users\1234Y\Documents\Dsyscalls\defensiveinjector.exe",
+  "DefenseMechanism" : "Direct Syscall detection through callbacks interceptions.",
+  "DateTime" : "Mar 31 2024 00:54:48",
+  "StubAddress" : "0000000000401E7B",
+} </code>
+                          </pre>
+                        
+                          <br>
+                          <h3>Catching Indirect Syscalls 🙅‍♂️</h3>
+
+                          <br>
+                          <h5>Hell's Hall (Indirect Syscalls + Hell's gate) VS Stack-Pointers Sanity Check</h5>
+
+
+                          <br>
+                          <h3>Documentation 📗</h3>
+                        
+
+                          <br>
+                          <h3>Epilogue</h3>
+                        <!-- Actually thinking bout' developing a Kernel version...🤔
+                           -->
+
+                        Feel free to <u><a href="https://github.com/Xacone/BestEdrOfTheMarket/issues">open a issue</a></u> for each bug/crash or excessive false positive you may encounter.
+                        <br><br>
+                        
+
+                        Il y'a encore plein de choses à ameliorer ....
+                        Also, I'm obviously not a specialist in EDRs, I'm just a kido trying to code stuff and working on this project is a lot of fun, so if you have any ideas, proposals (or even criticisms), it'll be a pleasure to discuss them 😉​. 
+
+                    </div>
+                </div>
+            </div>
+        </article>
+        <!-- Footer-->
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <!--<li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#!">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-facebook-f fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>-->
+                            <li class="list-inline-item">
+                                <a href="http://github.com/xacone">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; Yazid 2024</div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="js/scripts.js"></script>
+    </body>
+    <script>
+        Prism.highlightAll();
+      </script>
+</html>
