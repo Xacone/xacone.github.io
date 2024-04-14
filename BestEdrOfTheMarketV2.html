@@ -297,10 +297,10 @@ The <code>/heap</code> flag will activate pattern analysis in the processuss hea
 
                           <br><br>
                           <h3>Direct Syscalls Who ? </h3>
-                          the EDR can detect when a direct syscall occurs, by intercepting the kernel return to the process and setting up an instrumentation callback to retrieve the value of the RIP register. The RIP register is then sent to the EDR, which checks whether it is legitimate and corresponds to an NTDLL routine. If this is not the case, the EDR assumes that a system call has taken place and terminates the process. 
+                          the EDR can detect when a direct syscall occurs, by intercepting the kernel return to the process and setting up an instrumentation callback to retrieve the value of the RIP register. The RIP register is then sent to the EDR, which checks whether it is legitimate and corresponds to an NTDLL routine. If this is not the case, the EDR assumes that a manual/direct system call occured and terminates the process. 
                           <br>
 
-                          This is the same mechanism used to notify the EDR that a system call has taken place and launch a call stack analysis.
+                          This is the same mechanism used to notify the EDR that a system call occured and launch a call stack analysis.
 
                           <br><br>
                           The <code>/direct</code> flag enables interception of direct syscalls.
@@ -347,7 +347,7 @@ The <code>/heap</code> flag will activate pattern analysis in the processuss hea
                           </div>  
                           <br>
 
-                          I've already had a chance to talk about this method in my previous article (which was banned by Linkedin lol), it goes into more detail about how this method works. 
+                          I've already had a chance to talk about this method in my previous article (which was banned by Linkedin lol), it goes into more details about how this method works. 
                           
                           <br><br>
                           <h5>Hell's Hall (By @MaldevAcademy) VS Stack-Pointers Sanity Check</h5>
