@@ -27,6 +27,7 @@
     <style>
         body {
             color: black;
+            zoom: 90%;
         }
         table {
             width: 100%;
@@ -40,6 +41,12 @@
         th {
             background-color: #f2f2f2;
         }
+
+        pre {
+            font-size:  12px;
+        }
+
+
     </style> 
     <body style="font-size: 17px; zoom: 90%;">
         <!-- Navigation-->
@@ -65,11 +72,11 @@
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <div class="post-heading">
                             <h1>Best EDR Of The Market v1.1.0 🐲​​</h1>
-                            <h2 class="subheading">I see no opponents righ up there.</h2>
+                            <h2 class="subheading">I see no opponents right up there.</h2>
                             <span class="meta">
                                 Posted by
                                 <a href="#!">Yazid</a>
-                                on April 19, 2024
+                                on April 14, 2024
                             </span>
                         </div>
                     </div>
@@ -82,279 +89,306 @@
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
 
-                        <br><br>
+                        <br>
                         <div style="display: flex; justify-content: center; align-items: center;">
-                            <img width="110%" src="assets/img/beotm_banner2.png">
+                            <img width="100%" src="assets/img/beotm_banner2.png">
                         </div>    
 
-                        <br><br>
-                          <a href="https://github.com/Xacone/BestEdrOfTheMarket" style="display: block; margin: 0 auto; text-align: center; border-radius: none;">
-                            <img src="https://github-readme-stats.vercel.app/api/pin/?username=Xacone&repo=BestEdrOfTheMarket" alt="ReadMe Card">
-                          </a>
+                      
 
                           <!--<blockquote style="text-align: center;"><i>You gotta worry bout' them malicious processes...</i></blockquote>-->
 
                           <br><br>
-                          The first version was quite simple and although it was fairly appreciated, it lacked of active response capacities. 
+                          The first version was quite simple and although it was fairly appreciated, it lacked of active response capacities. BEOTM's capabilities are now much more extensive, it now offers active hooks that send data that is analyzed by the EDR, it can analyze a process's heap, its in-memory regions when an unresolved address is detected in the call stack to detect code injections, abnormal system calls, and much more. All this, coupled with the integration of YARA rules, increases the tool's capabilities and maneuverability.
+
+                          <br><br>
+                          <a href="https://github.com/Xacone/BestEdrOfTheMarket" style="display: block; margin: 0 auto; text-align: center; border-radius: none;">
+                            <img src="https://github-readme-stats.vercel.app/api/pin/?username=Xacone&repo=BestEdrOfTheMarket" alt="ReadMe Card">
+                          </a>
                         
                           <br>
-                          <br>
+
+                          This article takes a quick look at what's new in the new version and at the small changes that have been made to the existing stuff.
+
+                          <br><br>
+
                           <h3>Active Response & YARA Rules ❤️​</h3>
 
                           Injected DLLs and the EDR now communicate via named pipes. Each purpose has its own named piple channel.
                           <br>
-                          DLLs send relevant data (buffer addresses, instruction pointers, stack pointers...) to the BEOTM. The EDR then analyzes the data and decides whether the process is malicious or not. 
+                          DLLs send relevant data (buffer addresses, instruction pointers, stack pointers...) to BEOTM which then analyzes the received data and decides whether the process is malicious or not by applying the desired checks. 
 
                           <br><br>
                           <div style="display: flex; justify-content: center; align-items: center;">
-                              <img width="110%" src="assets/img/beotm_named_pipes_scheme.png">
+                              <img width="100%" src="assets/img/beotm_named_pipes_scheme.png">
                           </div>    
 
-                          BEOTM does now supports YARA rules ! Put your Yara files in the YARA/ directory within and specify the /yara flag when launching it, they will be compiled and used for pattern scanning at multiple levels.
-
+                          BEOTM does now supports YARA rules! Put your YARA files in the YARA/ directory within THE EDR folder and specify the <code>/yara</code> flag when launching it, they will be compiled and used for pattern scanning at multiple levels (hooks, stack, heap & memory).
 
                           <br><br>
-                          J'ai pas mal joué avec la règle de Metasploit durant mes tests, je vous conseille de faire de même, celle-ci provient du magnifique dépot d'Elastic Security : 
+                          I've played a lot with a <a style="color: blue;"  href="https://github.com/elastic/protections-artifacts/blob/main/yara/rules/Windows_Trojan_Metasploit.yar">Metasploit's artifact detection rule which comes from the wonderful Elastic Security repository</a> as it provides a great accuracy for Metasploit-generated artfacts. I was able to test and detect encrypted shellcode injections in the same process or in a remote one. <a style="color: blue;"  href="https://github.com/Xacone/BestEdrOfTheMarket">BEOTM's Github repository shows examples of BEOTM commands and parameters to detect various malicious artefacts + their code samples</a>, so don't hesitate to have a look at it. Metasploit artefacts are such a good playground to trigger detections, 
+  
+                          <br><br>
+                          <h3>Active hooks 🪝</h3>
+                          
+                          The hooks made on the targeted process now send the EDR addresses to be analyzed, the EDR suspends the process for the duration of the analysis and reads the process memory at the location of these addresses, then checks for YARA patterns or simple patterns, once the analysis is complete, if it finds nothing it resumes execution of the process, if it finds a pattern it kills the program and alerts the user.
 
-                          <pre class="text" style="text-align: left;">
-                            <code>rule Windows_Trojan_Metasploit_38b8ceec {
-    meta:
-        author = "Elastic Security"
-        id = "38b8ceec-601c-4117-b7a0-74720e26bf38"
-        fingerprint = "44b9022d87c409210b1d0807f5a4337d73f19559941660267d63cd2e4f2ff342"
-        creation_date = "2021-03-23"
-        last_modified = "2021-08-23"
-        description = "Identifies the API address lookup function used by metasploit. Also used by other tools (like beacon)."
-        threat_name = "Windows.Trojan.Metasploit"
-        severity = 85
-        arch_context = "x86"
-        scan_context = "file, memory"
-        license = "Elastic License v2"
-        os = "windows"
-    strings:
-        $a1 = { 89 E5 31 D2 64 8B 52 30 8B 52 0C 8B 52 14 8B 72 28 0F B7 4A 26 31 FF 31 C0 AC 3C 61 }
-    condition:
-        $a1
-}</code>
-</pre>
+                          <br>
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                              <img width="100%" src="assets/img/beotm_ntdll_active.png">
+                          </div>    
 
+                          <br>
+                          <h5>NT-Level Early Bird APC Queue XOR-encrypted Shellcode (Metasploit) Injector VS NT hooks + YARA</h5>
+                          The function used here to detect the pattern after shellcode decryption is <code>NtProtectVirtualMemory</code>, Here, the pattern is detected using the YARA rule for Metasploit artifacts.
 
-<pre>
-  <code>
+                          <br><br>
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                              <img width="100%" src="assets/gifs/early_apc_vs_nt_yara.gif">
+                          </div>   
+
+                          <br>
+
+                          The EDR reports, among other things, the pattern detected and the rule to which it belongs.
+                          <pre class="text" style="font-size: 12px;">
+                            <code>[!] Malicious process detected ! Killing it ....
 {
   "Version" : "1.1.0",
-  "MaliciousPID" : "0",
-  "MalicousProcessPath" : "",
-  "DefenseMechanism" : "Hooked NtAllocateVirtualMemory",
-  "DateTime" : "Apr  1 2024 02:54:35",
-  "Address" : "0x00000dcc450100",
-  "DetectedPattern" : "d265488b5260488b5218488b5220488b725048",
-  "PatternList" : "DLL Patterns",
-  "FoundIn" : "fc4883e4f0e8c0000000415141505251564831d265488b5260488b5218488b5220488b7250480fb74a4a4d31c94831c0ac3c617c022c2041c1c90d4101c1e2ed524151488b52208b423c4801d08b80880000004885c074674801d0508b4818448b40204901d0e35648ffc9418b34884801d64d31c94831c0ac41c1c90d4101c138e075f14c034c24084539d175d858448b40244901d066418b0c48448b401c4901d0418b04884801d0415841585e595a41584159415a4883ec204152ffe05841595a488b12e957ffffff5d49be7773325f3332000041564989e64881eca00100004989e549bc0200115cc0a8204a41544989e44c89f141ba4c772607ffd54c89ea68010100005941ba29806b00ffd550504d31c94d31c048ffc04889c248ffc04889c141baea0fdfe0ffd54889c76a1041584c89e24889f941ba99a57461ffd54881c44002000049b8636d640000000000415041504889e25757574d31c06a0d594150e2fc66c74424540101488d442418c600684889e6565041504150415049ffc0415049ffc84d89c14c89c141ba79cc3f86ffd54831d248ffca8b0e41ba08871d60ffd5bbf0b5a25641baa695bd9dffd54883c4283c067c0a80fbe07505bb4713726f6a00594189daffd5700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-}
-</code>
-</pre>
-
-<pre class="text" style="text-align: left;">
-    <code>[!] Malicious process detected ! Killing it ....
-{
-  "Version" : "1.1.0",
-  "MaliciousPID" : "8540",
-  "MaliciousProcessPath" : "C:\ShellcodeDropper\ShellcodeDropper.exe",
-  "DefenseMechanism" : "Yara rule matching detected.",
-  "DateTime" : "Mar 30 2024 13:23:43",
+  "MaliciousPID" : "13824",
+  "MaliciousProcessPath" : "C:\Users\1234Y\early_bird_apc\x64\Debug\early_bird_apc.exe",
+  "DefenseMechanism" : "Defensive technique revealed a YARA pattern matching.",
+  "DateTime" : "Apr 14 2024 17:43:44",
   "YaraRuleName :"Windows_Trojan_Metasploit_a6e956c9",
   "YaraRuleNamespace : " : "Elastic Security",
 }
 0x00000000: 60 89 e5 31 c0 64 8b 50 30 8b 52 0c 8b 52 14 8b  `..1.d.P0.R..R..
-0x00000010: 72 28 0f b7 4a 26 31 ff ac 3c 61 7c 02 2c 20     r&#40;&#46;&#46;J&amp;1&#46;&#60;a&#124;&#46;&#44;
+0x00000010: 72 28 0f b7 4a 26 31 ff ac 3c 61 7c 02 2c 20     r&#40;&#46;&#46;J&amp;1&#46;&#60;a&#124;&#46;&#44; </code>
+                          </pre>
 
-</code>
+
+                          <h5>NT-Level Early Bird APC Queue XOR-encrypted Shellcode (Metasploit) Injector VS NT hooks + Simple Patterns</h5>
+                          <br>
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                              <img width="100%" src="assets/gifs/early_vs_nt_patterns.gif">
+                          </div>
+                          <br>  
+                          The EDR reports that a pattern has been detected and where it was detected in the case of simple patterns (YaroRules.json).
+
+                          
+<pre class="text" style="font-size: 12px;">
+  <code>{
+  "Version" : "1.1.0",
+  "MaliciousPID" : "0",
+  "MalicousProcessPath" : "",
+  "DefenseMechanism" : "Hooked NtProtectVirtualMemory",
+  "DateTime" : "Apr 14 2024 17:43:44",
+  "Address" : "0x00000059E70FF0C8",
+  "DetectedPattern" : "d265488b5260488b5218488b5220488b725048",
+  "PatternList" : "DLL Patterns",
+  "FoundIn" : "cd01000000000000f4000000000000000.....
+}</code>
 </pre>
 
-Metasploit artefacts are a good playground ..
+                          <h5>Kernel32-Level APC Queue XOR-encrypted Shellcode (Metasploit) Injector VS Kernel32 hooks + YARA rules</h5>
 
-                          <br>
-                          <h3>Active hooks 🪝</h3>
+                          Here, the interception of <code>WriteProcessMemory</code> reveals the presence of a pattern.
 
                           <br><br>
                           <div style="display: flex; justify-content: center; align-items: center;">
-                              <img width="110%" src="assets/img/beotm_ntdll_active.png">
-                          </div>    
-
-                          Trying with Metasploit shellcodes... <br><br>
-
-                            
-                          <h4>Kernel32/Base hooks</h4><br>
-                          <table>
-                            <tr>
-                              <th>Function</th>
-                              <th>Description</th>
-                            </tr>
-                            <tr>
-                              <td>VirtualAlloc</td>
-                              <td>Allocate memory in the virtual address space of a process.</td>
-                            </tr>
-                            <tr>
-                              <td>WriteProcessMemory</td>
-                              <td>Write data to the memory of a specified process.</td>
-                            </tr>
-                            <tr>
-                              <td>VirtualFree</td>
-                              <td>Release or decommit a region of memory previously allocated.</td>
-                            </tr>
-                            <tr>
-                              <td>VirtualFreeEx</td>
-                              <td>Release or decommit a region of memory in a specified process.</td>
-                            </tr>
-                            <tr>
-                              <td>VirtualProtect</td>
-                              <td>Change the protection on a region of committed pages in the virtual address space of a process.</td>
-                            </tr>
-                            <tr>
-                              <td>MapViewOfFile</td>
-                              <td>Create a view of a file mapping into the address space of the calling process.</td>
-                            </tr>
-                            <tr>
-                              <td>VirtualProtectEx</td>
-                              <td>Change the protection on a region of committed pages in the virtual address space of a specified process.</td>
-                            </tr>
-                            <tr>
-                              <td>UnmapViewOfFile</td>
-                              <td>Unmap a mapped view of a file from the calling process's address space.</td>
-                            </tr>
-                            <tr>
-                              <td>VirtualQuery</td>
-                              <td>Retrieve information about a range of pages in the virtual address space of a specified process.</td>
-                            </tr>
-                            <tr>
-                              <td>ReadProcessMemory</td>
-                              <td>Read data from the memory of a specified process.</td>
-                            </tr>
-                            <tr>
-                              <td>InternetOpenUrlW</td>
-                              <td>Opens a URL for reading on the internet.</td>
-                            </tr>
-                            <tr>
-                              <td>InternetReadFile</td>
-                              <td>Reads data from a handle opened by the InternetOpenUrl or InternetOpenUrlW function.</td>
-                            </tr>
-                            <tr>
-                              <td>InternetReadFileExW</td>
-                              <td>Reads data from a handle opened by the InternetOpenUrl or InternetOpenUrlW function, and can also return additional data.</td>
-                            </tr>
-                            <tr>
-                              <td>InternetOpenW</td>
-                              <td>Initializes an application's use of the WinINet functions.</td>
-                            </tr>
-                          </table>
-
-                          <br><br>
-                          <h4>NTDLL hooks </h4>
-                          <br>
-
-                            <table>
-                            <tr>
-                                <th>Function</th>
-                                <th>Description</th>
-                            </tr>
-                            <tr>
-                                <td>NtAllocateVirtualMemory</td>
-                                <td>Allocate memory in the virtual address space of a process using native API.</td>
-                            </tr>
-                            <tr>
-                                <td>NtProtectVirtualMemory</td>
-                                <td>Change the protection on a region of committed pages in the virtual address space of a process using native API.</td>
-                            </tr>
-                            <tr>
-                                <td>NtWriteVirtualMemory</td>
-                                <td>Write data to the memory of a specified process using native API.</td>
-                            </tr>
-                            <tr>
-                                <td>NtFreeVirtualMemory</td>
-                                <td>Release or decommit a region of memory previously allocated using native API.</td>
-                            </tr>
-                            <tr>
-                                <td>NtMapViewOfSection</td>
-                                <td>Create a view of a section of a file mapping into the address space of the calling process using native API.</td>
-                            </tr>                          
-                          </table>
-
-                          <br>
-                          <h5>APC Queue Metasploit Shellcode Injector vs WriteVirtualMemory hook (/k32) + YARA</h5>
-
-                          <br>
-
-                          <h5>NT-Level Metasploit Shellcode Loader vs  (/nt) + YARA</h5>
-
-
+                            <img width="100%" src="assets/gifs/k32_vs_early.gif">
+                          </div>
                           <br>
                           <h3>Heap Monitoring 🔍​</h3>
 
+The <code>/heap</code> flag will activate pattern analysis in the processuss heap and must be used with a hook, i.e. either <code>/k32</code>, <code>/iat</code> or <code>/nt</code>. Each time a function is intercepted, an additional heap analysis will be performed. This mechanism can be used, for example, to detect reflective module loaders by looking for DOS headers patterns within the heap. <br>
+
                           <div style="display: flex; justify-content: center; align-items: center;">
-                            <img width="110%" src="assets/img/beotm_heap_monitoring .png">
+                            <img width="100%" src="assets/img/beotm_heap_monitoring .png">
                           </div>    
 
                           <br>
-                          <h3>Renewed Threads Call Stack Monitoring Methodology🔋​</h3>
+                          <h5>Reflective DLL injection (heap) VS Heap Monioring + IAT hooks</h5>
 
-                          Le fichier trigerringfunctions n'a plus aucun impact
+                          <br>
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/gifs/heap_monitoring.gif">
+                          </div>    
+
+                          <br>
+                          The EDR also reports the heap pattern / YARA pattern that has been identified, a DOS header pattern in the following case.
+
+                          <pre style="font-size: 12px;" class="text">
+                            <code>{
+  "Version" : "1.1.0",
+  "MaliciousPID" : "23700",
+  "MaliciousProcessPath" : "C:\Users\1234Y\source\repos\ReflectiveDLLInjection\x64\Debug\ReflectiveDLLInjection.exe",
+  "DefenseMechanism" : "Heap Regions Analysis",
+  "DateTime" : "Apr 14 2024 17:43:44",
+  "Heap Region Address" : "2228e090000",
+  "DetectedPattern" : "4d5a90000300000004000000ffff0000b800000000000000400000000000000000000000000000000000",
+}</code>
+</pre>
+                          <h3>New Threads Call Stack Analysis Methodology🔋​</h3>
+                          Well, The stack analysis method on the old version was messed up, the tool was actively waiting for threads to refresh and there were a lot of routines that weren't catched, all this has been removed and the process thread call stack analysis is now triggered as soon as a system call is catched.
+
+                          The stack analysis will perform these two checks: <br><br>
+                          <ul>
+                            <li>
+                              A check on the parameters of stacked functions and verify that, if these parameters are pointers, they should do not point to malicious buffers.
+                            </li>
+<br>
+                            <li>
+                              Analyze the memory region from which an unbacked address emanates, i.e. one that does not belong to the memory region of any module loaded by the process.
+                            </li>
+                          </ul>
+
+
+                          The <code>/stack</code> flag allows to continuously analyze a process's threads call stack.
 
                           <div style="display: flex; justify-content: center; align-items: center;">
-                            <img width="110%" src="assets/img/beotm_heap_monitoring .png">
+                            <img width="100%" src="assets/img/beotm_stack_new.png">
+                          </div>    
+
+
+                          <br><br>
+                          <b> ℹ️ <i> ​Note that there's no more TrigerringFunctions.json file since there is no longer any active filtering on functions.</b> </i>
+                          <br>  
+
+                          <br>
+                          <h5>NT-Level Shellcode Loader VS Stack Trace Analysis + YARA</h5>
+
+                          <br>
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/gifs/stack_vs_nt_level_dropper.gif">
                           </div>  
 
                           <br>
-                          <h3>Unbacked Threads Start Addresses Detection 👺</h3>
+                          <h5>Kernel32-Level Shellcode Loader VS Stack Trace Analysis + Simple Patterns</h5>
+                          
+                          <br>
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/gifs/stacked_functions_parameters_vs_stack.gif">
+                          </div>  
+<br>
+                          In the following case, it turns out that the stacked function <code>RtlImageRvaToSection</code> includes a pointer to a Buffer containing the malicious pattern.
+                          <br>
+                          <pre class="text">
+                            <code>{
+  "Version" : "1.1.0",
+  "MaliciousPID" : "17844",
+  "MaliciousProcessPath" : "C:\Users\1234Y\source\repos\MediumLevelDropper\x64\Release\MediumLevelDropper.exe",
+  "DefenseMechanism" : "Stacked Functions Arguments Analysis (Normal patterns)",
+  "DateTime" : "Apr 14 2024 17:43:44",
+  "Function :"RtlImageRvaToSection",
+  "Stack Frame Offset : " : "7ff90a9188b6",
+  "PatternList" : "d265488b5260488b5218488b5220488b725048",
+  "FoundIn" : "0000000000000000000000000000000000000000000000000000000000000000e02868dc1c02000000000000000000000000000000000000000000000000000000000000000000000000000000
+}</code>
+                          </pre>
 
-                          <br> 
                           <h3>ETW & AMSI Patching Mitigation 💀</h3>
 
-                          <br> 
-                          <h3>Direct Syscalls Who ? </h3>
+                          The EDR also allows you to continually check that the routines essential to AMSI and ETW are not patched, by checking that the opcodes of the <code>AmsiScanBuffer</code>, <code>AmsiOpenSession</code>, <code>NtTraceEvent</code> & <code>EtwEventWritte</code> functions are not altered. Here, the EDR detects a process that modifies the byte sequence of the above-mentioned routines.
 
+                          <br><br>
                           <div style="display: flex; justify-content: center; align-items: center;">
-                            <img width="110%" src="assets/img/direct_syscalls_check.png">
+                            <img width="100%" src="assets/gifs/nopatch.gif">
                           </div>  
 
+                          <br><br>
+                          <h3>Direct Syscalls Who ? </h3>
+                          the EDR can detect when a direct syscall occurs, by intercepting the kernel return to the process and setting up an instrumentation callback to retrieve the value of the RIP register. The RIP register is then sent to the EDR, which checks whether it is legitimate and corresponds to an NTDLL routine. If this is not the case, the EDR assumes that a system call has taken place and terminates the process. 
                           <br>
-                          <h5>DefensiveInjector VS RIP Sanity Check</h5>
+
+                          This is the same mechanism used to notify the EDR that a system call has taken place and launch a call stack analysis.
+
+                          <br><br>
+                          The <code>/direct</code> flag enables interception of direct syscalls.
+                          <br><br>
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/img/direct_syscalls_check.png">
+                          </div>  
+
+                          
+                          <br><br>
+                          <h5>DefensiveInjector (by @bats3c) VS Direct Syscalls Detection (RIP check)</h5>
+                          <br>
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/gifs/nodirectsyscalls.gif">
+                          </div>  
+<br>
+                          The EDR reports the syscall stub address within the target process.
 
                           <pre class="text">
-                            <code>[!] Direct Syscall stub at 0000000000401E7B
+                            <code>[!] Direct Syscall stub at 0000000000401E5A
 
 {
   "Version" : "1.1.0",
-  "MaliciousPID" : "10368",
+  "MaliciousPID" : "29932",
   "MaliciousProcessPath" : "C:\Users\1234Y\Documents\Dsyscalls\defensiveinjector.exe",
   "DefenseMechanism" : "Direct Syscall detection through callbacks interceptions.",
-  "DateTime" : "Mar 31 2024 00:54:48",
-  "StubAddress" : "0000000000401E7B",
+  "DateTime" : "Apr 14 2024 17:43:44",
+  "StubAddress" : "0000000000401E5A",
 } </code>
                           </pre>
                         
+                          
+                          <h3>Catching Potential Indirect Syscalls </h3>   
+
+                          This method consists in protecting a set of routines against indirect syscalls by setting a hardware breakpoint inside them. 
+
+                          Once the hardware breakpoint has been reached, an exception handler retrieves the context of the calling thread and checks whether the stack pointer (RSP) actually points to a Kernel32, Kernelbase or Ntdll routine. If this is not the case, the EDR assumes that the invocation is not legitimate and kills the process.
+                          
+                          <br><br>
+                          Since there are only 4 hardware breakpoints for inline addresses, the routines I've chosen to protect against indirect syscalls are : <b>NtProtectVirtualMemory, NtWriteVirtualMemory, NtCreateThreadEx and NtCreateUserProcess</b>
+                          
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/img/indirect_scheme.png">
+                          </div>  
                           <br>
-                          <h3>Catching Indirect Syscalls 🙅‍♂️</h3>
+
+                          I've already had a chance to talk about this method in my previous article (which was banned by Linkedin lol), it goes into more detail about how this method works. 
+                          
+                          <br><br>
+                          <h5>Hell's Hall (By @MaldevAcademy) VS Stack-Pointers Sanity Check</h5>
 
                           <br>
-                          <h5>Hell's Hall (Indirect Syscalls + Hell's gate) VS Stack-Pointers Sanity Check</h5>
-
-
+                          <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/gifs/noindirectsyscalls.gif">
+                          </div>  
                           <br>
-                          <h3>Documentation 📗</h3>
+                          The EDR reports the address pointed to by the offending RSP.
+                      
+                          <pre class="text" >
+                            <code>[!] Indirect Syscall Detected !
+
+{
+  "Version" : "1.1.0",
+  "MaliciousPID" : "22056",
+  "MaliciousProcessPath" : "C:\Malwares\HellsHall.exe",
+  "DefenseMechanism" : "Indirect Syscalls detection through stack pointers health Check.",
+  "DateTime" : "Apr 14 2024 17:43:44",
+  "StubAddress" : "00007FF6748A229C",
+}</code>
+                          </pre>
+
+                          <h3>Docs 📚</h3>
                         
+                          I'm also working on a Doxygen documentation for those interested in the source code, which is accessible at the following link: <u><a href="https://xacone.github.io/BestEdrOfTheMarket/">https://xacone.github.io/BestEdrOfTheMarket/</a></u>. Take a look at it if you're one of them 👀​. 
+                          <br>
 
                           <br>
                           <h3>Epilogue</h3>
                         <!-- Actually thinking bout' developing a Kernel version...🤔
                            -->
 
-                        Feel free to <u><a href="https://github.com/Xacone/BestEdrOfTheMarket/issues">open a issue</a></u> for each bug/crash or excessive false positive you may encounter.
+
+                           There's still quite a few things to improve, but working on this project is a source of fun for me and I don't intend to stop there, so if you have any ideas, proposals (or even criticisms), it'll be a pleasure to discuss them ;)
+                          <br><br>
+                        Also feel free to <u><a href="https://github.com/Xacone/BestEdrOfTheMarket/issues">open a issue</a></u> for each bug/crash or excessive false positive you may encounter, I'll be happy to take a close look at it.
                         <br><br>
                         
 
-                        Il y'a encore plein de choses à ameliorer ....
-                        Also, I'm obviously not a specialist in EDRs, I'm just a kido trying to code stuff and working on this project is a lot of fun, so if you have any ideas, proposals (or even criticisms), it'll be a pleasure to discuss them 😉​. 
 
                     </div>
                 </div>
