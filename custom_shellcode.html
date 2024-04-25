@@ -71,11 +71,7 @@
                         <p>
                             We're going to create a malicious payload, such as a reverse shell, which we'll then convert into x64 shellcode. The payload/shellcode we'll be designing here is stageless because it is, after all, only a proof of concept, but you could easily improve it & implement a staged payload using methods such as reflective DLL loading.<br>
                             We're also going to design a payload <b>that's independent of any pre-imports</b>, and which itself retrieves the functions it needs and loads the necessary DLLs.
-                        </p>
-
-                        <p>
-                            We won't be using direct syscalls for a simple reason: I'm currently learning about SSN retrieval methods such as Hell's gate, Halo's gate & Tartarus gate, and I'd like to implement a shellcode coupling these 3 methods to direct syscalls, which could be the subject of a future article.
-                        </p>
+			</p>
 
                         <p>
                             As a bonus, we'll see how to execute the shellcode from functions that at first glance seem totally legitimate, such as <code>EnumFontsW</code>, which initially aim to enumerate Windows fonts 🙉. 
