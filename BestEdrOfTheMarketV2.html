@@ -123,7 +123,7 @@
                               <img width="100%" src="assets/img/beotm_named_pipes_scheme.png">
                           </div>    
 
-                          BEOTM does now supports YARA rules! Put your YARA files in the YARA/ directory within THE EDR folder and specify the <code>/yara</code> flag when launching it, they will be compiled and used for pattern scanning at multiple levels (hooks, stack, heap & memory).
+                          BEOTM does now supports YARA rules! Put your YARA files in the YARA/ directory within the EDR folder and specify the <code>/yara</code> flag when launching it, they will be compiled and used for pattern scanning at multiple levels (hooks, stack, heap & memory).
 
                           <br><br>
                           I've played a lot with a <a style="color: blue;"  href="https://github.com/elastic/protections-artifacts/blob/main/yara/rules/Windows_Trojan_Metasploit.yar">Metasploit's artifact detection rule which comes from the wonderful Elastic Security repository</a> as it provides a great accuracy for Metasploit-generated artfacts. I was able to test and detect encrypted shellcode injections in the same process or in a remote one. <a style="color: blue;"  href="https://github.com/Xacone/BestEdrOfTheMarket">BEOTM's Github repository shows examples of BEOTM commands and parameters to detect various malicious artefacts + their code samples</a>, so don't hesitate to have a look at it. Metasploit artefacts are such a good playground to trigger detections, 
