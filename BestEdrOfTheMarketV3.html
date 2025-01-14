@@ -434,7 +434,7 @@ The principle is that you can register a system call handler in the <code>PsAltS
 BOOLEAN SyscallHandler(PKTRAP_FRAME trapFrame)
 </code></pre>
 
-It receives a pointer to the <a href="https://www.vergiliusproject.com/kernels/x64/windows-10/22h2/_KTRAP_FRAME"><code>TrapFrame</code></a> of the calling thread, enabling it to retrieve the system call arguments via RCX, RDX, R8, R9 and then RSP+0x28 for the 6th and RSP+0x30 for the third etc... The system call is identified through the RAX register, which contains its ID, the famous Syscall ID.
+It receives a pointer to the <a href="https://www.vergiliusproject.com/kernels/x64/windows-10/22h2/_KTRAP_FRAME"><code>TrapFrame</code></a> of the calling thread, enabling it to retrieve the system call arguments via RCX, RDX, R8, R9 and then RSP+0x28 for the 6th and RSP+0x30 for the seventh etc... The system call is identified through the RAX register, which contains its ID, the famous Syscall ID.
 <br><br>
 In the BEOTM driver, the handler is defined by the <a href="https://github.com/Xacone/BestEdrOfTheMarket/blob/9e361a869796f89717dd525dce438eaa45fef0ec/BestEdrOfTheMarketDriver/src/SyscallsTracing.cpp#L223"><code>SyscallsUtils::SyscallHandler</code></a> function in SyscallsTracing.cpp. As you can see, the function dispatches the handling of the system call to the right handler, depending on its ID.
 <br><br>
