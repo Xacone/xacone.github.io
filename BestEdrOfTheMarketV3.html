@@ -391,7 +391,7 @@ Each leaf represents a Virtual Address Descriptor and can then be defined as <co
         [+0x080] FileObject       : 0xffff9b0505da4e58 : "" - {...} [Type: _FILE_OBJECT *]</code></pre>
 
 
-The <code>>Core</code member, of type <code>MMVAD_SHORT</code>, contains information such as the start and end VPNs.
+The <code>>Core</code> member, of type <code>MMVAD_SHORT</code>, contains information such as the start and end VPNs.
 <br><br>
 
 <pre class="text"><code>2: kd> dx -r1 ((_MMVAD*)&(((_RTL_BALANCED_NODE*)((_RTL_AVL_TREE*)&((_EPROCESS*)0xffff9b050411d080)->VadRoot)->Root)->Left))->Core
