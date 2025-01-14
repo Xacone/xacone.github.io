@@ -171,7 +171,7 @@ The aim of this article is to provide a brief discussion of the detection method
 As mentioned above, BEOTM's core business is moving from user mode to the Kernel. The driver relies as much on documented mechanisms such as kernel callbacks as on undocumented mechanisms like alternative system call handlers to intercept events taking place on the system and analyze them then decide whether or not a TTP it is monitoring has occurred. The aim is also to make a self-sufficient driver, so that it can gather information without having to rely on a user service to consume ETW-TI events or any other user-mode inteception method. The driver must be autonomous and versatile.
 
 <br><br>
-The user module, for its part, has been refactored to serve only as a client for data sent by the driver, and features a minimal UI interface designed with <a href="https://github.com/ArthurSonzogni/FTXUI">FTXUI</a>s as a friendly basis for future evolutions.
+The user module, for its part, has been refactored to serve only as a client for data sent by the driver, and features a minimal UI interface designed with <a href="https://github.com/ArthurSonzogni/FTXUI">FTXUI</a> as a friendly basis for future evolutions.
 
 <br><br>
 <center>
