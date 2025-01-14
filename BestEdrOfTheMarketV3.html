@@ -91,7 +91,7 @@
                             <span class="meta">
                                 Posted by
                                 <a href="#!">Yazid</a>
-                                on January 13, 2025
+                                on January 14, 2025
                             </span>
                         </div>
                     </div>
@@ -117,36 +117,36 @@
                         <h4>Contents</h4>
                         <nav>
                             <ul style="color:#182C61">
-                                <li><a href="#section1" class="blue-text">Introducing the BEOTM Kernel Driver
+                                <li><a href="#https://xacone.github.io/BestEdrOfTheMarketV3.html#1" class="blue-text">Introducing the BEOTM Kernel Driver
                                     <ol type="a">
                                         <li>Events Data Format & Queues</li>
                                         <li>Kernel Notification Callbacks</li>
                                     </ol>
                                 </a></li>
-                                <li><a href="#section2" class="blue-text">In-Memory Mapped Images Monitoring
+                                <li><a href="https://xacone.github.io/BestEdrOfTheMarketV3.html#2" class="blue-text">In-Memory Mapped Images Monitoring
                                 </a></li>
-                                <li><a href="#section3" class="blue-text">Process Tampering/Hollowing Protection
+                                <li><a href="https://xacone.github.io/BestEdrOfTheMarketV3.html#3" class="blue-text">Process Tampering/Hollowing Protection
                                 </a></li>
-                                <li><a href="#section4" class="blue-text">System Calls Tracing & Monitoring via Alternative Handlers
+                                <li><a href="https://xacone.github.io/BestEdrOfTheMarketV3.html#4" class="blue-text">System Calls Tracing & Monitoring via Alternative Handlers
                                 <ol type="a">
                                     <li>Sensitive System Calls Parameters Monitoring</li>
                                     <li>Abnormal Syscalls Monitoring</li>
                                 </ol>
                                 </a></li>
-                                <li><a href="#section4" class="blue-text">In-Memory Code Injection Prevention
+                                <li><a href="https://xacone.github.io/BestEdrOfTheMarketV3.html#5" class="blue-text">In-Memory Code Injection Prevention
                                     <ol type="a">
                                         <li>Detection of common C2 artifacts: Sliver & Metasploit</li>
                                     </ol>
                                 </a></li>
                                 <!-- <li><a href="#section4" class="blue-text">Leaking SSDT Address
                                 </a></li> -->
-                                <li><a href="#section4" class="blue-text">Shadow Stacks Against Threads Stack Spoofing (Bonus)
+                                <li><a href="https://xacone.github.io/BestEdrOfTheMarketV3.html#6" class="blue-text">Shadow Stacks Against Threads Stack Spoofing (Bonus)
                                 </a></li>
-                                <li><a href="#section4" class="blue-text">Preventing Credentials Dump
+                                <li><a href="https://xacone.github.io/BestEdrOfTheMarketV3.html#7" class="blue-text">Preventing Credentials Dump
                                 </a></li>
-                                <li><a href="#section4" class="blue-text">Modulating BEOTM & Issue Reporting
+                                <li><a href="https://xacone.github.io/BestEdrOfTheMarketV3.html#8" class="blue-text">Modulating BEOTM & Issue Reporting
                                 </a></li>
-                                <li><a href="#section4" class="blue-text">Wrapping Up
+                                <li><a href="https://xacone.github.io/BestEdrOfTheMarketV3.html#9" class="blue-text">Wrapping Up
                                 </a></li>
                             </ul>
                         </nav>
@@ -158,16 +158,16 @@ Well, those days are long gone, and the project has made a major leap forward: <
 After all, a serious EDR editor must have realized that hooking became useless in view of the telemetry capabilities offered by the kernel/ETW-TI. Wouldn't you agree?
 <br>
 <br>
-The aim of this article is to provide a brief discussion of the detection methods implemented in this new driver and the changes that have taken place from an architectural point of view. This article will also take the time to detail some undocumented aspects and structures of the Windows kernel that have taken a bit of research to exploit properly, such as the VAD tree and alternative system call handlers. 
+The aim of this article is to provide a brief discussion of the detection methods implemented in this new driver and the changes that have taken place from an architectural point of view. This article will also take the time to detail some undocumented aspects and structures of the Windows kernel that have taken a bit of research to exploit properly, such as the VAD Tree and Alternative System Call Handlers. 
 
 <br>
 <br>
-<h3>Introducing the BEOTM Kernel Driver</h3>
+<h3 id="1">Introducing the BEOTM Kernel Driver</h3>
 
- As mentioned above, BEOTM's core business is moving from user mode to the Kernel. The driver relies as much on documented mechanisms such as kernel callbacks as on undocumented mechanisms such as alternative system call handlers to intercept events taking place on the system and aggregate them, analyze them and decide whether or not a TTP it is monitoring has occurred. The aim is also to make a self-sufficient driver, so that it can gather information without having to rely on a user service to consume ETW-TI events or any other user-mode inteception method. The driver must be autonomous and versatile.
+As mentioned above, BEOTM's core business is moving from user mode to the Kernel. The driver relies as much on documented mechanisms such as kernel callbacks as on undocumented mechanisms like alternative system call handlers to intercept events taking place on the system and analyze them then decide whether or not a TTP it is monitoring has occurred. The aim is also to make a self-sufficient driver, so that it can gather information without having to rely on a user service to consume ETW-TI events or any other user-mode inteception method. The driver must be autonomous and versatile.
 
 <br><br>
-The user module, for its part, has been refactored to serve only as a client for data sent by the driver, and features a minimal UI interface designed with FTXUI as a friendly basis for future evolutions.
+The user module, for its part, has been refactored to serve only as a client for data sent by the driver, and features a minimal UI interface designed with <a href="https://github.com/ArthurSonzogni/FTXUI">FTXUI</a>s as a friendly basis for future evolutions.
 
 <br><br>
 <center>
@@ -178,7 +178,7 @@ The user module, for its part, has been refactored to serve only as a client for
 </center>
 <!-- <img src="assets/img/beotm_user_program.png" style="width: 100%;"> -->
 
-The BEOTM driver has been designed to be compatible with Windows versions between <b>Windows 10 20H1 (build 19041) and Windows 11 23H2 (build 22632)</b>. One of the challenges of ensuring compatibility was to adapt the offsets of the undocumented structures used, and the vergilius project was a great help. The source code provides a small python script that scans the site for the offsets of the structures you're interested in for the targeted Windows versions.
+The BEOTM driver has been designed to be compatible with Windows versions between <b>Windows 10 20H1 (build 19041) and Windows 11 23H2 (build 22632)</b>. One of the challenges of ensuring compatibility was to adapt the offsets of the undocumented structures used, and the <a href="https://www.vergiliusproject.com/">vergilius project</a> was a great help. The source code provides <a href="https://github.com/">a small python script</a> that scans the site for the offsets of the structures you're interested in for the targeted Windows versions.
 
 <br><br> The choice was also made to keep everything local, open-source and not to send anything to third-party CTI service providers, so the patterns used when analyzing buffers, files, and so on, come solely from the EDR's Yara database, which is supplied by the user himself. You must therefore specify to the user program the path to the folder containing your Yara rules, and the program will compile them for you. There are several very rich and diverse sources of YARA rules, my favorites being @Neo23x0's signature-base and protections-artifacts by @Elastic. You can also build your own rules for your artifacts and include them .
 
@@ -278,7 +278,7 @@ Some of th techniques above need to be explained in greater detail, and are desc
 The driver also exploits a kind of callback which is not documented but which is, in my opinion, the most powerful of those mentioned above: The alternative system call mechanism. The Windows kernel allows us to register a callback and redirect thread system calls to this callback. This callback then captures the state of the thread (its context) on which we can apply analyses. This part has its own section later in this article. 
 
 <br><br>
-<h3>In-Memory Mapped Images Monitoring</h3>
+<h3 id="2">In-Memory Mapped Images Monitoring</h3>
 
 For each image mapped into memory, the driver captures the path dans <code>PIMAGE_INFO</code> to the file and transmits it to the user module, which checks for any signature via its Yara database. If a pattern is detected, the user module sends an IOCTL to the driver with the process pid, asking it to terminate the process in question.
 <br><br>
@@ -296,7 +296,7 @@ The following example shows the immediate termination of mimikatz.exe as soon as
 </video>
 
 <br><br>
-<h3>Process Tampering/Hollowing Protection</h3>
+<h3 id="3">Process Tampering/Hollowing Protection</h3>
 
 Anyone who has ever dealt with forensic image analysis to detect hollowing with Volatility using plugins like <a href="https://github.com/volatilityfoundation/volatility/wiki/Command-Reference#vadinfo"><u>vadinfo</u></a> will know what I'm talking about here. The BEOTM driver now uses a highly relevant structure: the <b><a href="https://www.sciencedirect.com/science/article/pii/S1742287607000503"><u>Virtual Address Descriptor Tree</u></a></b>. As its name suggests, this structure takes the form of a tree, with each leaf describing a virtual memory region. Each process has its own VAD tree. In this way, the EDR uses the same structure as the kernel itself to track the evolution of regions, so it can locate the regions dedicated to images loaded into memory. 
 <br><br>
@@ -429,7 +429,7 @@ The driver issues an alert as soon as TTP is detected, and the process is immedi
 </video>
 
 <br><br>
-<h3>System Calls Tracing & Monitoring via Alternative Handlers</h3>
+<h3 id="4">System Calls Tracing & Monitoring via Alternative Handlers</h3>
 
 This mechanism has been the most fun I've had implementing it, and I'm delighted with the way it works. Why is that? Well, because I don't think we talk about it enough, given its power. We're looking at a mechanism that allows us to intercept all system calls made by process threads, and which also makes our task easier by providing us with the context of the thread in user mode, enough to build a bunch of detection methodologies. 
 <br><br>
@@ -675,7 +675,7 @@ In the following example, we detect a thread hijacker attempting to inject shell
 <br><br>
 <h4>Abnormal Syscalls Monitoring</h4>
 
-Here I've taken over a detection method I implemented on the user side in the previous version, using instrumentation callbacks to detect direct system calls. Why not do the same thing on the kernel side, using the same principle: as soon as an Nt* system call is issued, the handler checks whether RIP (user) is included in Ntdll, but this time through the VAD tree, so as to verify whether or not it's Ntdll that is issuing the system call in question. The principle is the same: we still check the address to which RIP points, but unlike instrumentation callbacks, we don't check it by capturing the return, but rather by capturing the flow of execution.
+Here I've taken over a detection method I implemented on the user side in the previous version, <a href="https://winternl.com/detecting-manual-syscalls-from-user-mode/">using instrumentation callbacks to detect direct system calls</a>. Why not do the same thing on the kernel side, using the same principle: as soon as an Nt* system call is issued, the handler checks whether RIP (user) is included in Ntdll, but this time through the VAD tree, so as to verify whether or not it's Ntdll that is issuing the system call in question. The principle is the same: we still check the address to which RIP points, but unlike instrumentation callbacks, we don't check it by capturing the return, but rather by capturing the flow of execution.
 <br><br>
 
 <center>
@@ -695,7 +695,7 @@ The following example shows an alert activated when an artifact is launched, rel
 </center>
 
 <br><br>
-<h3>In-Memory Code Injection Prevention</h3>
+<h3 id="5">In-Memory Code Injection Prevention</h3>
 
 Relying on the callback mechanism when a thread is created, once the EDR driver is notified it retrieves the thread stack at the time of its creation with <code>RtlCaptureStackBackTrace</code> and looks to see if its first address is included within the Ntdll-dedicated virtual memory region. 
 <br><br>
@@ -735,7 +735,7 @@ The same applies to Metasploit artifacts, which are also based on code injection
 </video>
 
 <br><br>
-<h3>Shadow Stacks Against Threads Stack Spoofing (Bonus)</h3>
+<h3 id="6">Shadow Stacks Against Threads Stack Spoofing (Bonus)</h3>
 
 The detection method presented here relies on the shadow stack check on which Control-Flow Enforcement Technology (CET) is based, to verify the integrity of the call stack against tampering.
 
@@ -763,7 +763,7 @@ This logic is managed by the <code><a href="#">StackUtils::isStackCorruptedRtlCE
 Microsoft is gradually introducing CET in new versions of Windows, so let's be ahead of the game! ;)
 
 <br><br>
-<h3>Preventing Credentials Dump</h3>
+<h3 id="7">Preventing Credentials Dump</h3>
 
 The driver also prevents handle opening attempts with an access mask containing <code>PROCESS_VM_READ</code> on the Lsass.exe process, to block any process dump attempts. And directly terminates the processuss that initiated the handle opening request. This operation is handled by the <a href="#"><code>ObjectUtils::isCredentialDumpAttempt</code></a> function, which is called by the <a href=""><code>ObjectUtils::PreOperationCallback</code></a> function within the Objects.cpp source file. in addition to checking whether the Handle's access mask contains <code>PROCESS_VM_READ</code>, the driver also checks whether the calling process is signed as in other detection methods. If it isn't, it's dead.
 <br><br>    
@@ -811,7 +811,7 @@ the following example shows the alert triggered by an attempt to dump the Lsass.
 </video>
 
 <br><br>
-<h3>Modulating BEOTM & Issue Reporting</h3>
+<h3 id="8">Modulating BEOTM & Issue Reporting</h3>
 
 As you'll see if you browse through the source code, BEOTM's structure is designed to separate the concerns of each detection scope. Not only to make things clearer, but also to enable you to build your own detection methodologies for specific TTPs, and even contribute to the project if you like. As an example, you can try to intercept other interesting system calls for analysis purposes. I've already got a few placeholders for functions that interest me personally:
 <br><br>
@@ -845,7 +845,7 @@ VOID SyscallsUtils::NtQueueApcThreadHandler(
 I'm aware that this first might not be perfect, and there may be be things I haven't seen that will jump out at others, such as crashes or unexpected bugs. This is a rather delicate passage in the kernel, and I'll be more than happy to correct any problems reported to me via an Issue. I'm just asking for as much information as possible to help me pinpoint the cause of the error. To do this, nothing better than to provide me with the conditions under which the bug was reproduced and, incidentally, the artifact that caused it + the output of “<code>analyze -v</code>” on WinDbg in kernel debugging mode, if possible. <br><br>I've also tried to manage compatibility between Windows versions as best I could, but as I don't have all the kernel builds in my hands, especially for structure offsets, I've had to get rid of some of the things I'd set up, such as SSDT parsing, for fear of blowing things up. So if anything has changed in the range covered by the driver (Win10 20H1 -> Win11 23H2), let me know :).
 
 <br><br>
-<h3>Wrapping Up</h3>
+<h3 id="9">Wrapping Up</h3>
 
 Behind the fun aspect of this project, I'd also like to contribute, <i>in my modest way</i>, to open-sourcing methods for exploiting the telemetric capabilities of operating systems for detectability purposes. I dare to hope that one day, advanced analysis methods will not only be available to organizations, but also to the general public (and that they won't cost a fortune).
 <br><br>
