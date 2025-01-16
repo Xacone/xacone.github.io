@@ -413,7 +413,7 @@ VADs associated with an image have a non-null <code>Subsection</code> member fro
     [+0x002] MaximumLength    : 0x78 [Type: unsigned short]
     <b>[+0x008] Buffer           : 0xffff80074e787d40 : "\Windows\System32\ntshrui.dll" [Type: wchar_t *]</b></code></pre>
 
-This is part of the logic implemented by the <a href="https://github.com/Xacone/BestEdrOfTheMarket/blob/9e361a869796f89717dd525dce438eaa45fef0ec/BestEdrOfTheMarketDriver/src/Process.cpp#L4"><code>ProcessUtils::isProcessImageTampered</code></a> function in the Process.cpp source file, which checks whether the process image is tampered or not.
+This is part of the logic implemented by the <a href="https://github.com/Xacone/BestEdrOfTheMarket/blob/9e361a869796f89717dd525dce438eaa45fef0ec/BestEdrOfTheMarketDriver/src/Process.cpp#L4"><code>ProcessUtils::isProcessImageTampered</code></a> function in the Process.cpp source file and the <a href="https://github.com/Xacone/BestEdrOfTheMarket/blob/9e361a869796f89717dd525dce438eaa45fef0ec/BestEdrOfTheMarketDriver/src/Vad.cpp#L259"><code>VadUtils::exploreVadTreeAndVerifyLdrIngtegrity</code></a> recursive function in Vad.cpp, which checks whether the process image is tampered or not.
 <br><br>
 
 The driver issues an alert as soon as TTP is detected, and the process is immediately killed:
