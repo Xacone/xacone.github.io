@@ -182,7 +182,7 @@ The user module, for its part, has been refactored to serve only as a client for
 </center>
 <!-- <img src="assets/img/beotm_user_program.png" style="width: 100%;"> -->
 
-The BEOTM driver has been designed to be compatible with Windows versions between <b>Windows 10 20H1 (build 19041) and Windows 11 23H2 (build 22632)</b>. One of the challenges of ensuring compatibility was to adapt the offsets of the undocumented structures used, and the <a href="https://www.vergiliusproject.com/">Vergilius Project</a> was a great help. The BOETM repo provides <a href="https://github.com/Xacone/BestEdrOfTheMarket/blob/main/BestEdrOfTheMarketDriver/parser.py">a small python script</a> that scans the website looking for the offsets of the structures you're interested in for the targeted Windows versions.
+The BEOTM driver has been designed to be compatible with Windows versions between <b>Windows 10 20H1 (build 19041) and Windows 11 23H2 (build 22632)</b>. One of the challenges of ensuring compatibility was to adapt the offsets of the undocumented structures used, and the <a href="https://www.vergiliusproject.com/">Vergilius Project</a> was a great help. The BEOTM repo provides <a href="https://github.com/Xacone/BestEdrOfTheMarket/blob/main/BestEdrOfTheMarketDriver/parser.py">a small python script</a> that scans the website looking for the offsets of the structures you're interested in for the targeted Windows versions.
 
 <br><br> The choice was also made to keep everything local, open-source and not to send anything to third-party CTI service providers, so the patterns used when analyzing buffers, files, and so on, come solely from the EDR's Yara database, which is supplied by the user himself. You must therefore specify to the user program the path to the folder containing your Yara rules, and the program will compile them for you. There are several very rich and diverse sources of YARA rules, my favorites being @Neo23x0's <a href="https://github.com/Neo23x0/signature-base">signature-base</a> and <a href="https://github.com/elastic/protections-artifacts">protections-artifacts</a> by @Elastic. You can also build your own rules for your artifacts and include them.
 
@@ -850,7 +850,7 @@ Behind the fun aspect of this project, I'd also like to contribute, <i>in my mod
 <br><br>
 This was my first real experience of designing a kernel driver from A to Z, with its constraints and its satisfactions. Of course, I also did it in C++ which is the world's greatest programming language. <i>Btw i tried to do some POCs in Rust but the syntax made me puke so not for now.</i>
 <br><br>
-I'd also like to take advantage of this skidding moment to answer a question I'm often asked: “Why did you call it Best Edr Of The Market?” Well, it's simple: all EDR publishers claim that their product is the best, especially at the end of the year with the MITRE results. So why shouldn't I too lol. 
+I'd also like to take advantage of this skidding moment to answer a question I'm often asked: <i>“Why did you call it Best Edr Of The Market?”</i> Well, it's simple: all EDR publishers claim that their product is the best, especially at the end of the year with the MITRE results. So why shouldn't I too lol. 
 <br><br>
 In any case, I hope you enjoy this 3rd version and that anyone interested in it has as much fun as I had while making it. And I obviously remain open to discussion and suggestions <i>(Discord: yazidou)</i>. Feel free to contact me if you'd also like to contribute to the project and need help at some point!
 
