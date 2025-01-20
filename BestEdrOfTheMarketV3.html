@@ -743,7 +743,7 @@ Once the two stacks have been retrieved, the driver first checks whether they ar
 
 <br><br>
 
-As CET is not yet generalized to all binaries, I call it an "Experimental method because <b>it requires two things from you</b>: The first one is to have a VM or test lab compatible with Intel VT-x/EPT for machines with Intel CPUs, or AMD-R/RVI for AMD CPUs. This will require an 11th generation Intel processor or higher, or an AMD Zen3 CPU or higher. Why is this? Well, because the shadow stack resides in secure, non-alterable memory regions. Intel VT-x/EPT and AMD-R/RVI, provide hardware support for isolating certain memory regions. The shadow stack is stored in these protected memory areas to ensure that it cannot be modified by regular application code.
+As CET is not yet generalized to all binaries, I call it an "Experimental" method because <b>it requires two things from you</b>: The first one is to have a VM or test lab compatible with Intel VT-x/EPT for machines with Intel CPUs, or AMD-R/RVI for AMD CPUs. This will require an 11th generation Intel processor or higher, or an AMD Zen3 CPU or higher. Why is this? Well, because the shadow stack resides in secure, non-alterable memory regions. Intel VT-x/EPT and AMD-R/RVI, provide hardware support for isolating certain memory regions. The shadow stack is stored in these protected memory areas to ensure that it cannot be modified by regular application code.
 
 <br><br>
 The second point is that you'll need to compile your artifacts with the <b><a style="color: #3867d6;" href="https://learn.microsoft.com/en-us/cpp/build/reference/cetcompat?view=msvc-170"><code><u>/CETCOMPAT</u></code></a></b> option, to enable the user to make your program CET-compatible and benefit from the shadow stack.
