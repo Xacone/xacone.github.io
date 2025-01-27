@@ -195,6 +195,7 @@ The user and kernel modules communicate via queues and IOCTLs, with the driver p
 <img src="assets/img/beotmqueues.png" style="width: 70%;">
 </center>
 
+<br>
 The <i>Bytes Queues</i> send dedicated byte buffers to be analyzed by the user module via its Yara database. These buffers are sourced from the parameters of intercepted system calls. If the user module detects a pattern, it sends an IOCTL (0x216) to the driver asking it to kill the process which can be recognized via its PID. 
 
 The bytes queue transmits data of type <code>KERNEL_STRUCTURED_BUFFER</code>, which in addition to the buffer to be analyzed, includes basic information such as buffer size, process PID and process name.<br><br> 
