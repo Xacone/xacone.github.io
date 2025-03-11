@@ -18,6 +18,26 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300&display=swap" rel="stylesheet">
     </head>
+
+    <style>
+        @media (max-width: 768px) {
+            .profile-container {
+                display: block !important;
+                text-align: center;
+            }
+            .profile-container img {
+                width: 80% !important;
+                margin-bottom: 10px;
+            }
+            .social-links {
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+        }
+    </style>
+
     <body>
         <!-- Navigation-->
         <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
@@ -47,7 +67,36 @@
                         <br>
                         <br>
 
-                        <div style="display: flex; align-items: flex-start; gap: 20px;">
+                        <div class="profile-container" style="display: flex; align-items: flex-start; gap: 20px;">
+                            <img width="40%" src="assets/img/me2.jpg" style="width: 50%;">
+                            <div>
+                                <h3 style="font-family: 'Inconsolata', monospace;">C:\Windows\System32> whoami</h3>
+                                <p>Yazid, 23. <br><br>Interested in Detection Engineering, Windows Exploitation, Defense Evasion, Reverse Engineering, and Debugging. <br><br> I also like trying to code stuff :p</p>
+                                
+                                <div class="social-links">
+                                    <a href="https://discord.com/users/yazidou">
+                                        <span class="fa-stack fa-lg">
+                                            <i class="fas fa-circle fa-stack-2x"></i>
+                                            <i class="fab fa-discord fa-stack-1x fa-inverse"></i>
+                                        </span>
+                                    </a>
+                                    <a href="https://www.github.com/Xacone">
+                                        <span class="fa-stack fa-lg">
+                                            <i class="fas fa-circle fa-stack-2x"></i>
+                                            <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                        </span>
+                                    </a>
+                                    <a href="https://www.linkedin.com/in/yazid-benjamaa/">
+                                        <span class="fa-stack fa-lg">
+                                            <i class="fas fa-circle fa-stack-2x"></i>
+                                            <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
+                                        </span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- <div style="display: flex; align-items: flex-start; gap: 20px;">
                             <img width="40%" src="assets/img/me2.jpg" style="width: 50%">
                             <div>
                                 <h3 style="font-family: 'Inconsolata', monospace;">C:\Windows\System32> whoami</h3>
@@ -58,8 +107,6 @@
                                             <i class="fas fa-circle fa-stack-2x"></i>
                                             <i class="fab fa-discord fa-stack-1x fa-inverse"></i>
                                         </span>
-                                        <!-- <span style="margin-left: 8px; font-size: 18px; color: black;">yazidou</span> -->
-
                                     </a>
                                 </li>
 
@@ -70,7 +117,6 @@
                                             <i class="fab fa-github fa-stack-1x fa-inverse"></i>
                                         </span>
                                     </a>
-                                    <!-- <span style="margin-left: 8px; font-size: 18px; color: black; font-family: Arial, Helvetica, sans-serif;">Xacone</span> -->
                                 </li>
 
                                 <li class="list-inline-item">
@@ -80,10 +126,9 @@
                                             <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
                                         </span>
                                     </a>
-                                    <!-- <span style="margin-left: 8px; font-size: 18px; color: black;">Yazid Benjamaa</span> -->
                                 </li>
                                 
-                            </div>
+                            </div> -->
                             
                             
                         </div>
