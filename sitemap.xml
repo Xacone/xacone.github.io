@@ -11,6 +11,11 @@
   <priority>1.00</priority>
 </url>
 <url>
+  <loc>https://xacone.github.io/eneio-driver.html</loc>
+  <lastmod>2025-03-11T01:34:23+00:00</lastmod>
+  <priority>0.90</priority>
+</url>
+<url>
   <loc>https://xacone.github.io/BestEdrOfTheMarketV3.html</loc>
   <lastmod>2025-01-31T01:34:23+00:00</lastmod>
   <priority>0.90</priority>
@@ -47,11 +52,6 @@
 </url>
 <url>
   <loc>https://xacone.github.io/custom_shellcode.html</loc>
-  <lastmod>2023-11-19T01:34:23+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://xacone.github.io/remote-reflective-dll-injection.html</loc>
   <lastmod>2023-11-19T01:34:23+00:00</lastmod>
   <priority>0.80</priority>
 </url>
