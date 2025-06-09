@@ -90,7 +90,7 @@
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <div class="post-heading">
-                            <h1>Circumventing Leak Restrictions and Breaking KASLR on Windows 11 24H2 using an HVCI-compatible Driver with Physical Memory Access.</h1>
+                            <h1>Circumventing Leak Restrictions and Breaking KASLR on Windows 11 24H2 using an HVCI-compatible Driver with Physical Memory Access</h1>
                             <h2 class="subheading">Silly method to obtain the NTOS base address by leveraging the eneio64.sys driver, which provides read/write primitives on the system’s physical memory.</h2>
                             <span class="meta">
                                 Posted by
@@ -113,18 +113,18 @@
                         </div>    
 
                         <br><br>
-                        Well think of this post as a continuation of <a target="_blank" href="https://xacone.github.io/eneio-driver.html"><b>my previous blog post</b></a> on exploiting the HVCI-compatible <b><a target="_blank" href="https://www.loldrivers.io/drivers/90ecbbf7-b02f-424d-8b7d-56cc9e3b5873/">eneio64.sys</a></b> kernel driver, which I achieved by simulating the translation of physical addresses into virtual addresses using paging structures. The truth is, I hesitated for a long time about doing this blog post, telling myself that I was too trivial and I'm probably missing something, but I'm doing it anyway, we never know. The aim of this very short blog post is to propose an alternative way of leaking the NTOS address on Windows 11 24H2 when exploiting a driver with R/W primitives on <b>physical memory</b>.
+                        Well think of this post as a continuation of <a target="_blank" href="https://xacone.github.io/eneio-driver.html"><b>my previous blog post</b></a> on exploiting the HVCI-compatible <b><a target="_blank" href="https://www.loldrivers.io/drivers/90ecbbf7-b02f-424d-8b7d-56cc9e3b5873/">eneio64.sys</a></b> kernel driver, which I achieved by simulating the translation of physical addresses into virtual addresses using paging structures. The truth is, I hesitated for a long time about doing this blog post, telling myself that It was too trivial and I'm probably missing something, but I'm doing it anyway, we never know. The aim of this very short blog post is to propose an alternative way of leaking the NTOS address on Windows 11 24H2 when exploiting a driver with R/W primitives on <b>physical memory</b>.
 
 <br>
                         <br>
 
-                        In the previous post, I leveraged the Low Stub, which is present in the physical memory layout of systems that enable HVCI, to retrieve the value of CR3 in order to initiate the process of translating <b>leaked</b> virtual addresses into physical addresses, since I'm exploiting a driver that only provides access on physical memory, so as to make any exploitation technique possible on this driver as on a driver exposing R/W primitives on virtual memory. Since Windows 11 24H2, it is no longer possible to rely on EnumDeviceDriver sor NtQuerySystemInformation to leak, among other things, kernel module addresses from an average integrity process, and SeDebugPrivilege is now required for this. <a target="_blank" href="https://windows-internals.com/kaslr-leaks-restriction/">This blog post by Yarden Shafir</a> details these changes at the kernel level. There are tools like <a target="_blank" href="https://github.com/exploits-forsale/prefetch-tool">prefetch-tool</a>, which <a target="_blank" href="https://hackyboiz.github.io/2025/04/13/l0ch/bypassing-kernel-mitigation-part0/en/#Bypassing-KASLR-Mitigation-in-24H2">leverages the leftovers of KVA Shadow</a> on modern CPUs for <b>guessing</b> the NTOS address, this one worked on my host machine but for an unknown reason, not on my Windows 11 24H2 VM with which I'm working on this blog post.
+                        In the previous post, I leveraged the Low Stub, which is present at the beginning of the physical memory layout of HVCI-enabled systems, to retrieve the value of CR3 in order to initiate the process of translating <b>leaked</b> virtual addresses into physical addresses, since I'm exploiting a driver that only provides access on physical memory, so as to make any exploitation technique possible on this driver as on a driver exposing R/W primitives on virtual memory. Since Windows 11 24H2, it is no longer possible to rely on EnumDeviceDrivers or NtQuerySystemInformation to leak, among other things, kernel module addresses from an medium integrity process, and SeDebugPrivilege is now required for this. <a target="_blank" href="https://windows-internals.com/kaslr-leaks-restriction/">This blog post by Yarden Shafir</a> details these changes at the kernel level. There are tools like <a target="_blank" href="https://github.com/exploits-forsale/prefetch-tool">prefetch-tool</a>, which <a target="_blank" href="https://hackyboiz.github.io/2025/04/13/l0ch/bypassing-kernel-mitigation-part0/en/#Bypassing-KASLR-Mitigation-in-24H2">leverages the leftovers of KVA Shadow</a> on modern CPUs for <b>guessing</b> the NTOS address, this one worked on my host machine but for an unknown reason, not on my Windows 11 24H2 VM with which I'm working on this blog post.
 
                         <br>
                         <br>
 
-                        The thing is, the low stub doesn't just provide control registers, but a lot of other things, including NTOS kernel addresses of <b>non-exported functions</b>, so even if you recover these addresses, you don't really know what they correspond to (<i>if you don't hardcode their offset, which is something we will avoid</i>). 
-Many of these addresses are specific to the HAL layer, this can be seen by unrolling the LowStub to which HalpLowStub points:
+                        The thing is, the Low Stub doesn't just provide control registers, but a lot of other things, including NTOS kernel addresses of <b>non-exported functions</b>, so even if you recover these addresses, you don't really know what they correspond to (<i>if you don't hardcode their offset, which is something we will avoid</i>). 
+Many of these addresses are specific to the HAL layer, this can be seen by unrolling the Low Stub to which HalpLowStub points:
 
 <br><br>
 
@@ -169,7 +169,7 @@ fffff7d7`8000f0d0  00000000`00000000
 
 <br>
 
-The low stub is always between the physical address 0x10000 and 0x20000 (to be broad). Here, it is located at physical address <code>0x11000</code>:
+The low stub is always located between the physical addresses 0x10000 and 0x20000 (to be broad). Here, it is located at physical address <code>0x11000</code>:
 
 <br><br>
 
@@ -188,7 +188,7 @@ Virtual address fffff7d78000b000 translates to physical address 11000.
 
 <br>
 
-One address in particular caught my eye, that of KiSystemStartup, which is relatively early in the low stub:
+One address in particular caught my attention, that of KiSystemStartup, which is relatively early in the low stub:
 
 <br><br>
 
@@ -266,7 +266,7 @@ In this way, we can scan the Low Stub for an address suffixed with the last 3 by
 
     <br>
 
-You now have an idea of the alternative you can use if you need to exploit a kernel driver offering R/W primitives on physical memory (as here with eneio64.sys) on Windows 11 24H2, we now have the kernel address which can allow us to continue using the <a href="https://xacone.github.io/eneio-driver.html">technique illustrated in the previous post</a>, albeit with a few changes in that we have to start from the kernel address to retrieve the address of kernel objects, but it's still feasible. Let me know if you have any constructive remarks! (Discord: yazidou)
+You now have an idea of the alternative you can use if you need to exploit a kernel driver offering R/W primitives on physical memory (as here with eneio64.sys) on Windows 11 24H2, we now have the kernel address which can allow us to keep using the <a href="https://xacone.github.io/eneio-driver.html">technique illustrated in the previous post</a>, albeit with a few changes as we have to start from NTOS address to retrieve the various kernel objects addresses that are used, but it's still feasible. Let me know if you have any constructive commments! (Discord: yazidou)
 
 <br><br>
 
