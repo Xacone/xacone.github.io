@@ -174,12 +174,9 @@ The low stub is always located between the physical addresses 0x10000 and 0x2000
 <br><br>
 
 <pre class="text"><code><b>0: kd> ? poi(HalpLowStub)</b>
-
-    Evaluate expression: -8970039152640 = fffff7d7`8000b000
-
+Evaluate expression: -8970039152640 = fffff7d7`8000b000
 
 <b>0: kd> !vtop 7d5000 fffff7d78000b000</b>
-
 Amd64VtoP: Virt fffff7d78000b000, pagedir 00000000007d5000
 Amd64VtoP: PML4E 00000000007d5f78
 Amd64VtoP: PDPE 00000000f7f02af0
