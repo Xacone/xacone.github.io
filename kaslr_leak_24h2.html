@@ -217,9 +217,9 @@ RIP holds the address of KiSystemStartup, which is no more than the <b>entry poi
 <pre class="text"><code>0: kd> lmmnt
 Browse full module list
 start             end                 module name
-<b>fffff801`5ec00000</b> fffff801`5fc47000   nt         (pdb symbols) 
+fffff805`5ca00000 fffff805`5da47000   nt         (pdb symbols)  
 
-<b>0: kd> dx ((nt!_IMAGE_NT_HEADERS64*)(0xfffff801`5ec00000+0n280))->OptionalHeader.AddressOfEntryPoint</b>
+<b>0: kd> dx ((nt!_IMAGE_NT_HEADERS64*)(0xfffff805`5ca00000+0n280))->OptionalHeader.AddressOfEntryPoint</b>
 [...] : <b>0xa87010</b> [Type: unsigned long]
 </code></pre>
 
@@ -229,13 +229,13 @@ The Windows kernel aligns to 2MB boundaries since it leverages large-page memory
 
 <br><br>
 
-<pre class="text"><code>0: kd> !pte fffff801`5ec00000
-                                           VA fffff8015ec00000
-PXE at FFFF8542A150AF80    PPE at FFFF8542A15F0028    PDE at FFFF8542BE0057B0    PTE at FFFF857C00AF6000
+<pre class="text"><code>0: kd> !pte fffff805`5ca00000
+                                           VA fffff8055ca00000
+PXE at FFFFFDFEFF7FBF80    PPE at FFFFFDFEFF7F00A8    PDE at FFFFFDFEFE015728    PTE at FFFFFDFC02AE5000
 contains 000000001000B063  contains 000000001000C063  contains 8A000001004001A1  contains 0000000000000000
-pfn 1000b     ---DA--KWEV  pfn 1000c     ---DA--KWEV  pfn 100400    -GL-A--KR-V  <b style="color: black;">LARGE PAGE</b> pfn 100400    
+pfn 1000b     ---DA--KWEV  pfn 1000c     ---DA--KWEV  pfn 100400    -GL-A--KR-V  <b style="color: black;">LARGE PAGE</b> pfn 100400      0    
 
-0: kd> ? fffff801`5ec00000 % 200000
+0: kd> ? fffff805`5ca00000 % 200000
 Evaluate expression: 0 = 00000000`00000000
 </code></pre>
 
