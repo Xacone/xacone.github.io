@@ -273,7 +273,7 @@ Thus, we can scan the first megabyte of the physical memory layout, looking for 
 
     <br>
 
-You now have an idea of the alternative you can use if you need to exploit a kernel driver offering R/W primitives on physical memory (as here with eneio64.sys) on Windows 11 24H2, we now have the kernel address which can allow us to keep using the <a href="https://xacone.github.io/eneio-driver.html">technique illustrated in the previous post</a>, albeit with a few changes as we have to start from NTOS address to retrieve the various kernel objects addresses that are used, but it's still feasible. Let me know if you have any constructive commments! (Discord: yazidou)
+You now have an idea of the alternative you can use if you need to exploit a kernel driver offering R/W primitives on physical memory (as here with eneio64.sys) on Windows 11 24H2, we now have the kernel address which can allow us to keep using the <a href="https://xacone.github.io/eneio-driver.html">technique illustrated in the previous post</a>, albeit with a few changes as we have to start from NTOS address to retrieve the various kernel objects addresses that are used, but it's still feasible. Let me know if you have any constructive commments! (Discord: yazidou). Thanks to <a href="https://x.com/_winterknife_">winterknife</a> and <a href="https://x.com/sixtyvividtails">sixtyvividtails</a> for providing additional insights that helped improve this article.
 
 <br><br>
 
@@ -283,6 +283,7 @@ Will life get easier with vulnerable drivers that operate on physical memory? On
 <h4>References</h4>
 <ul style="font-style: italic;">
     <li><a href="https://standa-note.blogspot.com/2020/03/initializing-application-processors-on.html">Satoshi Tanda - Initializing Application Processors on Windows</a></li>
+    <li><a href="https://github.com/winterknife/EVENSTAR/issues/1">https://github.com/winterknife/EVENSTAR/issues/1</a></li>
 </ul>        
 
                     </div>
