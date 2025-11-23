@@ -523,7 +523,7 @@ We have an entire map of physical memory, so the translation process, which reli
 
 <br><br>
 
-The beginning of the physical memory layout contains a structure called the <b>Low Stub</b>, of type <a href="https://github.com/mic101/windows/blob/6c4cf038dbb2969b1851511271e2c9d137f211a9/WRK-v1.2/base/ntos/inc/amd64.h#L3334">PROCESSOR_START_BLOCK</a>. The Low Stub was originally located at a fixed address at the beginning of physical memory, but is randomized in recent versions of Windows, and is always between <code>0x10000</code> and <code>0x20000</code>. nt!HalpLowStub points to the Low Stub virtual address. This structure contains (among other things) a pointer to nt!HalpLMStub followed by the value of CR0, <b>CR3</b> and CR4, respectively. 
+The beginning of the physical memory layout contains a structure called the <b>Low Stub</b>, of type <a href="https://github.com/mic101/windows/blob/6c4cf038dbb2969b1851511271e2c9d137f211a9/WRK-v1.2/base/ntos/inc/amd64.h#L3334">PROCESSOR_START_BLOCK</a>. The Low Stub was originally located at a fixed address at the beginning of physical memory, but is randomized in recent versions of Windows, <b>and is always located in the first megabyte of the physical memory layout</b>. nt!HalpLowStub points to the Low Stub virtual address. This structure contains (among other things) a pointer to nt!HalpLMStub followed by the value of CR0, <b>CR3</b> and CR4, respectively. 
 
 <br><br>    
 
@@ -553,7 +553,7 @@ fffff7b0`c000b0a8  <b style="color: red;">00000000`00350ef8 -> CR4</b>
 [...]
 </code></pre>
 
-In physical memory, we can see that the address of nt!HalpLMStub is located at physical address 0x11070. Thus, in order to locate the Low Stub in physical memory, we can look for the address of nt!HalpLMStub between 0x10000 and 0x20000 and deduce that adding 0x30 to the physical address referencing the function will give us the physical address at which CR3 is stored. In this way, <b>we will have obtained the value of CR3</b>!
+In physical memory, we can see that the address of nt!HalpLMStub is located at physical address 0x11070. Thus, in order to locate the Low Stub in physical memory, we can look for the address of nt!HalpLMStub between 0 and 0x100000 (1MB) and deduce that adding 0x30 to the physical address referencing the function will give us the physical address at which CR3 is stored. In this way, <b>we will have obtained the value of CR3</b>!
 
 <br><br>
 
@@ -589,7 +589,7 @@ From user mode, we can leak the NTOS base address by using EnumDeviceDrivers. Th
 ULONG64 HalpLmStub = GetNtosBase() + 0x00410890;
 </code></pre>
 
-We can thus begin the exploit by finding the value of CR3 by searching for the address of nt!HalpLmStub in the physical memory space contained between 0x10000 and 0x20000, comparing each 8-byte read with the address of nt!HalpLmStub. Once found, we add 0x30 to the physical address and read what it contains, which naturally gives us the value of CR3:
+We can thus begin the exploit by finding the value of CR3 by searching for the address of nt!HalpLmStub in the physical memory space contained between 0x0 and 0x100000, comparing each 8-byte read with the address of nt!HalpLmStub. Once found, we add 0x30 to the physical address and read what it contains, which naturally gives us the value of CR3:
 
 <br><br>
 
@@ -620,7 +620,7 @@ We can thus begin the exploit by finding the value of CR3 by searching for the a
         UINT64 halpLmStubPhysicalPointer = 0;
         DWORD_PTR physical_offset;
    
-        for (physical_offset = 0x10000; physical_offset < 0x20000; physical_offset += sizeof(UINT64)) {
+        for (physical_offset = 0x0; physical_offset < 0x100000; physical_offset += sizeof(UINT64)) {
    
             UINT64 qword_value = 0;
             for (size_t i = 0; i < sizeof(UINT64); ++i) {
@@ -972,6 +972,7 @@ The full exploit is available on <a href="https://github.com/Xacone/Eneio64-Driv
     <li><a href="https://connormcgarr.github.io/paging/">Connor McGarr - Turning the Pages: Introduction to Memory Paging on Windows 10 x64</a></li>
     <li><a href="https://connormcgarr.github.io/hvci/">Connor McGarr - Exploit Development: No Code Execution? No Problem! Living The Age of VBS, HVCI, and Kernel CFG</a></li>
     <li><a href="https://standa-note.blogspot.com/2020/03/initializing-application-processors-on.html">Satoshi Tanda - Initializing Application Processors on Windows</a></li>
+</a></li>
 </ul>        
 
                     </div>
