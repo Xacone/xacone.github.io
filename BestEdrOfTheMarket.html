@@ -88,7 +88,7 @@
 
                     <br><br>
                     <div style="display: flex; justify-content: center; align-items: center;">
-                        <img width="120%" src="assets/img/beotm_cover.png">
+                        <img width="100%" src="assets/img/beotm_cover.png">
                     </div>
 
                     <br><br>
@@ -112,7 +112,7 @@
 
                     <br><br>
                     <div style="display: flex; justify-content: center; align-items: center;">
-                        <img width="120%" src="assets/img/ntdll_hooking.gif">
+                        <img width="100%" src="assets/img/ntdll_hooking.gif">
                     </div>
 
                     <br>
@@ -120,7 +120,7 @@
                     
                     <br><br>
                     <div style="display: flex; justify-content: center; align-items: center;">
-                        <img width="120%" src="assets/img/kernel32_hooking (1).gif">
+                        <img width="100%" src="assets/img/kernel32_hooking (1).gif">
                     </div>
 
                     <br>
@@ -147,7 +147,7 @@
                     A deep overview of what happens when <code>NtAllocateVirtualMemory</code> is intercepted by the DLL:                      
                     <br><br>
                     <div style="display: flex; justify-content: center; align-items: center;">
-                        <img width="120%" src="assets/img/hooking_detours.png">
+                        <img width="100%" src="assets/img/hooking_detours.png">
                     </div>
 
 
@@ -164,7 +164,7 @@
 
                     <br><br>
                     <div style="display: flex; justify-content: center; align-items: center;">
-                        <img width="120%" src="assets/img/callstackmonitoring.gif">
+                        <img width="100%" src="assets/img/callstackmonitoring.gif">
                     </div>
 
                     <br>
@@ -172,7 +172,7 @@
 
                     <br><br>
                     <div style="display: flex; justify-content: center; align-items: center;">
-                        <img width="120%" src="assets/img/callstackmonitoringreflectivedllinjection.gif">
+                        <img width="100%" src="assets/img/callstackmonitoringreflectivedllinjection.gif">
                     </div>
 
                     <br><br>
@@ -236,14 +236,14 @@ Here's a global conditional diagram of how threads call stack monioring works on
                         A MessageBox is shown for each intercepted function.<br><br>
                         <b><i>IAT-hooking VS Reflective DLL Loader:</i></b><br><br>
                         <div style="display: flex; justify-content: center; align-items: center;">
-                            <img width="120%" src="assets/img/iat_hooking.gif">
+                            <img width="100%" src="assets/img/iat_hooking.gif">
                         </div><br>
 
                         Some might (perhaps) wonder, as I did, how the registers are preserved with this interception method to be later analyzed, even with the addition of a MessageBox or any instruction that could potentially corrupt the register values and distort the parameter values. Well, all it takes is firing up IDA to get the answer:  this method does not prevent the preservation and backup of the values of the registers r8, r9, rcx, and rdx into other registers (rbx, rdi, rsi). 👍
 
                         <br><br>
                         <div style="display: flex; justify-content: center; align-items: center;">
-                            <img width="120%" src="assets/img/IATHookingRegsitersPreservation.png">
+                            <img width="100%" src="assets/img/IATHookingRegsitersPreservation.png">
                         </div>
                   
 
@@ -255,7 +255,7 @@ Here's a global conditional diagram of how threads call stack monioring works on
                     <br>
                     <br>
                     <div style="display: flex; justify-content: center; align-items: center;">
-                        <img width="110%" src="assets/img/ssn-crushing-error.png">
+                        <img width="100%" src="assets/img/ssn-crushing-error.png">
                     </div>
                     <br>
                     So what's the point of that ? Simply for making you try, from an attacker point of view, to revert the value of the syscall and override it with its real value that you would have fetched by any mean. 😉
@@ -268,7 +268,7 @@ Here's a global conditional diagram of how threads call stack monioring works on
                     
                     <br><br>
                     <div style="display: flex; justify-content: center; align-items: center;">
-                        <img width="120%" src="assets/img/shellcode_content_once_decrypted.png">
+                        <img width="100%" src="assets/img/shellcode_content_once_decrypted.png">
                     </div>
 
                     <br><br>
