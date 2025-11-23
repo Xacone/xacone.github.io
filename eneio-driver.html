@@ -563,13 +563,15 @@ In physical memory, we can see that the address of nt!HalpLMStub is located at p
 
 <br>
 
-For Windows 11 22H2, nt!HalpLMStub is contained at offset <code>0x410890</code> of ntoskrnl.exe. 
-
-<br><br>
+In the version of Windows 11 used here, nt!HalpLMStub is located at offset <code>0x410890</code> within ntoskrnl.exe:
 
 <pre class="text"><code>0: kd> ? nt!HalpLMStub - nt
 Evaluate expression: 4262032 = 00000000`00410890
 </code></pre>
+
+<div style="background:#f8f9fa; border-left:5px solid #182C61; padding:15px; margin:20px 0; font-size:16px; line-height:1.5; color:#212529;">
+    <strong>ℹ️ Important note:</strong> <span style="font-style:italic;"> <a href="./kaslr_leak_24h2.html">The article following this one</a> explains how to dispense with HalpLmStub to locate CR3 as well as the kernel base address, in order to also overcome the <a href="https://windows-internals.com/kaslr-leaks-restriction/">KASLR restrictions introduced in Windows 11 24H2</a>. There's also <a href="https://github.com/Xacone/Eneio64-Driver-Exploits/tree/main/procs">this write-up</a>, together with a proof of concept, that also shows how to retrieve all system processes starting from the kernel address and one of its exported functions. While the scope of the technique presented in that article is limited to Windows 11 22H2, these two new techniques extend its applicability up to 25H2.</span>
+</div>
 
 From user mode, we can leak the NTOS base address by using EnumDeviceDrivers. The nt!HalpLMStub address is thus obtained by adding the offset to the NTOS base address. Be sure to modulate this offset according to the version on which the exploit is intended to run <i>(here Win11 22H2)</i>.
 
